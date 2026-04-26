@@ -1,5 +1,9 @@
 import { BadRequestException } from '@nestjs/common';
 
+import { user } from '../schema/auth';
+
+import { UserService } from './user.service';
+
 const whereMock = jest.fn();
 const setMock = jest.fn(() => ({ where: whereMock }));
 const updateMock = jest.fn(() => ({ set: setMock }));
@@ -21,9 +25,6 @@ jest.mock('../media/media.service', () => ({
     getPublicUrl = jest.fn();
   },
 }));
-
-import { user } from '../schema/auth';
-import { UserService } from './user.service';
 
 describe('UserService', () => {
   let service: UserService;
@@ -81,11 +82,13 @@ describe('UserService', () => {
 
       const result = await service.saveAvatarImage('user_1', 'png');
 
-      expect(mediaService.getPublicUrl).toHaveBeenCalledWith('users/user_1.png');
+      expect(mediaService.getPublicUrl).toHaveBeenCalledWith(
+        'users/user_1.png',
+      );
       expect(updateMock).toHaveBeenCalledWith(user);
       expect(setMock).toHaveBeenCalledWith({
         image: 'https://cdn.example.com/users/user_1.png',
-        updatedAt: expect.any(Date),
+        updatedAt: expect.any(Date) as Date,
       });
       expect(eqMock).toHaveBeenCalledWith(user.id, 'user_1');
       expect(whereMock).toHaveBeenCalledWith('eq-condition');

@@ -1,3 +1,5 @@
+import { MediaService } from './media.service';
+
 const putObjectCommandMock = jest.fn();
 const s3ClientMock = jest.fn();
 const getSignedUrlMock = jest.fn();
@@ -14,7 +16,7 @@ jest.mock('@aws-sdk/client-s3', () => ({
 }));
 
 jest.mock('@aws-sdk/s3-request-presigner', () => ({
-  getSignedUrl: (...args: unknown[]) => getSignedUrlMock(...args),
+  getSignedUrl: (...args: unknown[]) => getSignedUrlMock(...args) as never,
 }));
 
 jest.mock('../config/env', () => ({
@@ -27,8 +29,6 @@ jest.mock('../config/env', () => ({
     endpoint: 'https://acc_123.r2.cloudflarestorage.com',
   }),
 }));
-
-import { MediaService } from './media.service';
 
 describe('MediaService', () => {
   let service: MediaService;
