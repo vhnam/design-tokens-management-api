@@ -3,7 +3,17 @@ import { z } from 'zod';
 
 function getRequiredValue(
   value: string | undefined,
-  name: 'DB_USER' | 'DB_PASSWORD' | 'DB_HOST' | 'DB_PORT' | 'DB_NAME',
+  name:
+    | 'DB_USER'
+    | 'DB_PASSWORD'
+    | 'DB_HOST'
+    | 'DB_PORT'
+    | 'DB_NAME'
+    | 'CLOUDFLARE_ACCOUNT_ID'
+    | 'CLOUDFLARE_R2_ACCESS_TOKEN'
+    | 'CLOUDFLARE_R2_SECRET_ACCESS_TOKEN'
+    | 'CLOUDFLARE_R2_BUCKET_NAME'
+    | 'CLOUDFLARE_R2_PUBLIC_URL',
 ): string {
   if (!value) {
     throw new Error(`Missing required environment variable: ${name}`);
@@ -23,6 +33,11 @@ const baseEnv = createEnv({
     DB_HOST: z.string().min(1).optional(),
     DB_PORT: z.string().min(1).optional(),
     DB_NAME: z.string().min(1).optional(),
+    CLOUDFLARE_ACCOUNT_ID: z.string().min(1).optional(),
+    CLOUDFLARE_R2_ACCESS_TOKEN: z.string().min(1).optional(),
+    CLOUDFLARE_R2_SECRET_ACCESS_TOKEN: z.string().min(1).optional(),
+    CLOUDFLARE_R2_BUCKET_NAME: z.string().min(1).optional(),
+    CLOUDFLARE_R2_PUBLIC_URL: z.string().min(1).optional(),
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,
@@ -40,6 +55,38 @@ export function getDatabaseUrl(): string {
   const dbName = getRequiredValue(baseEnv.DB_NAME, 'DB_NAME');
 
   return `postgres://${user}:${password}@${host}:${port}/${dbName}`;
+}
+
+export function getR2Config() {
+  const accountId = getRequiredValue(
+    baseEnv.CLOUDFLARE_ACCOUNT_ID,
+    'CLOUDFLARE_ACCOUNT_ID',
+  );
+  const accessKeyId = getRequiredValue(
+    baseEnv.CLOUDFLARE_R2_ACCESS_TOKEN,
+    'CLOUDFLARE_R2_ACCESS_TOKEN',
+  );
+  const secretAccessKey = getRequiredValue(
+    baseEnv.CLOUDFLARE_R2_SECRET_ACCESS_TOKEN,
+    'CLOUDFLARE_R2_SECRET_ACCESS_TOKEN',
+  );
+  const bucket = getRequiredValue(
+    baseEnv.CLOUDFLARE_R2_BUCKET_NAME,
+    'CLOUDFLARE_R2_BUCKET_NAME',
+  );
+  const publicBaseUrl = getRequiredValue(
+    baseEnv.CLOUDFLARE_R2_PUBLIC_URL,
+    'CLOUDFLARE_R2_PUBLIC_URL',
+  );
+
+  return {
+    accountId,
+    accessKeyId,
+    secretAccessKey,
+    bucket,
+    publicBaseUrl,
+    endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+  };
 }
 
 export const env = {
