@@ -7,6 +7,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { auth } from './auth/auth.config';
 import { env } from './config/env';
+import { EmailModule } from './email/email.module';
 import * as schema from './schema/auth';
 import { UserModule } from './user/user.module';
 
@@ -31,6 +32,7 @@ import { UserModule } from './user/user.module';
       config: { schema },
     }),
     TerminusModule,
+    EmailModule,
     UserModule,
   ],
   controllers: [AppController],

@@ -9,6 +9,8 @@ function getRequiredValue(
     | 'DB_HOST'
     | 'DB_PORT'
     | 'DB_NAME'
+    | 'RESEND_API_KEY'
+    | 'RESEND_FROM_EMAIL'
     | 'CLOUDFLARE_ACCOUNT_ID'
     | 'CLOUDFLARE_R2_ACCESS_TOKEN'
     | 'CLOUDFLARE_R2_SECRET_ACCESS_TOKEN'
@@ -27,17 +29,19 @@ const baseEnv = createEnv({
     CORS_ORIGIN: z.string().min(1),
     BETTER_AUTH_SECRET: z.string().min(1),
     BETTER_AUTH_URL: z.url(),
-    DATABASE_URL: z.string().min(1).optional(),
-    DB_USER: z.string().min(1).optional(),
-    DB_PASSWORD: z.string().min(1).optional(),
-    DB_HOST: z.string().min(1).optional(),
-    DB_PORT: z.string().min(1).optional(),
-    DB_NAME: z.string().min(1).optional(),
-    CLOUDFLARE_ACCOUNT_ID: z.string().min(1).optional(),
-    CLOUDFLARE_R2_ACCESS_TOKEN: z.string().min(1).optional(),
-    CLOUDFLARE_R2_SECRET_ACCESS_TOKEN: z.string().min(1).optional(),
-    CLOUDFLARE_R2_BUCKET_NAME: z.string().min(1).optional(),
-    CLOUDFLARE_R2_PUBLIC_URL: z.string().min(1).optional(),
+    RESEND_API_KEY: z.string().min(1),
+    RESEND_FROM_EMAIL: z.string().min(1),
+    DATABASE_URL: z.string().min(1),
+    DB_USER: z.string().min(1),
+    DB_PASSWORD: z.string().min(1),
+    DB_HOST: z.string().min(1),
+    DB_PORT: z.string().min(1),
+    DB_NAME: z.string().min(1),
+    CLOUDFLARE_ACCOUNT_ID: z.string().min(1),
+    CLOUDFLARE_R2_ACCESS_TOKEN: z.string().min(1),
+    CLOUDFLARE_R2_SECRET_ACCESS_TOKEN: z.string().min(1),
+    CLOUDFLARE_R2_BUCKET_NAME: z.string().min(1),
+    CLOUDFLARE_R2_PUBLIC_URL: z.string().min(1),
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,

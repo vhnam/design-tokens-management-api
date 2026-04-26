@@ -12,6 +12,7 @@ async function bootstrap() {
     origin: [env.CORS_ORIGIN],
     credentials: true,
   });
+  app.setGlobalPrefix('api');
   await app.listen(env.API_PORT);
 }
 void bootstrap();
