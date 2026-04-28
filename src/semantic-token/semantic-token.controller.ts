@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -10,14 +9,10 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import {
-  AuthGuard,
-  Session,
-  type UserSession,
-} from '@thallesp/nestjs-better-auth';
+import { AuthGuard } from '@thallesp/nestjs-better-auth';
 
-import { db } from '../config/db';
-import { workspace } from '../schema/workspace';
+import { WorkspaceId } from '../common/decorators/workspace-id.decorator';
+import { WorkspaceGuard } from '../common/guards/workspace.guard';
 
 import type {
   CreateSemanticTokenDto,
@@ -26,17 +21,15 @@ import type {
 import { SemanticTokenService } from './semantic-token.service';
 
 @Controller('semantic-tokens')
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, WorkspaceGuard)
 export class SemanticTokenController {
   constructor(private readonly semanticTokenService: SemanticTokenService) {}
 
   @Post()
-  async create(
-    @Session() session: UserSession,
+  create(
+    @WorkspaceId() workspaceId: string,
     @Body() createSemanticTokenDto: CreateSemanticTokenDto,
   ) {
-    const workspaceId = await this.getWorkspaceId(session);
-
     return this.semanticTokenService.create({
       ...createSemanticTokenDto,
       workspaceId,
@@ -44,28 +37,24 @@ export class SemanticTokenController {
   }
 
   @Get()
-  async findAll(@Session() session: UserSession) {
-    const workspaceId = await this.getWorkspaceId(session);
+  findAll(@WorkspaceId() workspaceId: string) {
     return this.semanticTokenService.findAll(workspaceId);
   }
 
   @Get(':id')
-  async findOne(
-    @Session() session: UserSession,
+  findOne(
+    @WorkspaceId() workspaceId: string,
     @Param('id', new ParseUUIDPipe()) id: string,
   ) {
-    const workspaceId = await this.getWorkspaceId(session);
     return this.semanticTokenService.findOne(id, workspaceId);
   }
 
   @Patch(':id')
-  async update(
-    @Session() session: UserSession,
+  update(
+    @WorkspaceId() workspaceId: string,
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() updateSemanticTokenDto: UpdateSemanticTokenDto,
   ) {
-    const workspaceId = await this.getWorkspaceId(session);
-
     return this.semanticTokenService.update(
       id,
       workspaceId,
@@ -74,33 +63,10 @@ export class SemanticTokenController {
   }
 
   @Delete(':id')
-  async remove(
-    @Session() session: UserSession,
+  remove(
+    @WorkspaceId() workspaceId: string,
     @Param('id', new ParseUUIDPipe()) id: string,
   ) {
-    const workspaceId = await this.getWorkspaceId(session);
     return this.semanticTokenService.remove(id, workspaceId);
-  }
-
-  private async getWorkspaceId(session: UserSession): Promise<string> {
-    const fromUser = (session.user as { workspaceId?: string }).workspaceId;
-    const fromSession = (session as { session?: { workspaceId?: string } })
-      .session?.workspaceId;
-    const normalized = (fromUser ?? fromSession)?.trim();
-
-    if (normalized) {
-      return normalized;
-    }
-
-    const [fallbackWorkspace] = await db
-      .select({ id: workspace.id })
-      .from(workspace)
-      .limit(1);
-
-    if (!fallbackWorkspace) {
-      throw new BadRequestException('Workspace id is required in session');
-    }
-
-    return fallbackWorkspace.id;
   }
 }

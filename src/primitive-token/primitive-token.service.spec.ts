@@ -26,15 +26,6 @@ const deleteMock = jest.fn<{ where: typeof deleteWhereMock }, [unknown]>(
 const eqMock = jest.fn(() => 'eq-condition');
 const andMock = jest.fn(() => 'and-condition');
 
-jest.mock('../config/db', () => ({
-  db: {
-    select: () => selectMock(),
-    insert: (table: unknown) => insertMock(table),
-    update: (table: unknown) => updateMock(table),
-    delete: (table: unknown) => deleteMock(table),
-  },
-}));
-
 jest.mock('drizzle-orm', () => ({
   eq: (left: unknown, right: unknown) => eqMock(left, right),
   and: (...conditions: unknown[]) => andMock(...conditions),
@@ -42,10 +33,16 @@ jest.mock('drizzle-orm', () => ({
 
 describe('PrimitiveTokenService', () => {
   let service: PrimitiveTokenService;
+  const dbMock = {
+    select: () => selectMock(),
+    insert: (table: unknown) => insertMock(table),
+    update: (table: unknown) => updateMock(table),
+    delete: (table: unknown) => deleteMock(table),
+  };
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new PrimitiveTokenService();
+    service = new PrimitiveTokenService(dbMock as never);
   });
 
   it('should create primitive token with normalized fields', async () => {

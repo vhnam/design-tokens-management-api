@@ -2,12 +2,14 @@ import { randomUUID } from 'node:crypto';
 
 import {
   BadRequestException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { and, eq } from 'drizzle-orm';
 
-import { db } from '../config/db';
+import type { Database } from '../config/db';
+import { DATABASE } from '../database/database.constants';
 import { primitiveToken } from '../schema/primitive-token';
 
 import type {
@@ -22,6 +24,8 @@ type CreatePrimitiveTokenInput = CreatePrimitiveTokenDto & {
 
 @Injectable()
 export class PrimitiveTokenService {
+  constructor(@Inject(DATABASE) private readonly db: Database) {}
+
   async create(
     createPrimitiveTokenDto: CreatePrimitiveTokenInput,
   ): Promise<PrimitiveTokenDto> {
@@ -41,7 +45,7 @@ export class PrimitiveTokenService {
       'Primitive token workspace is required',
     );
 
-    const [created] = await db
+    const [created] = await this.db
       .insert(primitiveToken)
       .values({
         id: randomUUID(),
@@ -56,14 +60,14 @@ export class PrimitiveTokenService {
   }
 
   async findAll(workspaceId: string): Promise<PrimitiveTokenDto[]> {
-    return db
+    return this.db
       .select()
       .from(primitiveToken)
       .where(eq(primitiveToken.workspaceId, workspaceId));
   }
 
   async findOne(id: string, workspaceId: string): Promise<PrimitiveTokenDto> {
-    const [found] = await db
+    const [found] = await this.db
       .select()
       .from(primitiveToken)
       .where(
@@ -115,7 +119,7 @@ export class PrimitiveTokenService {
       throw new BadRequestException('No fields to update');
     }
 
-    const [updated] = await db
+    const [updated] = await this.db
       .update(primitiveToken)
       .set(values)
       .where(
@@ -131,7 +135,7 @@ export class PrimitiveTokenService {
 
   async remove(id: string, workspaceId: string): Promise<{ deleted: true }> {
     await this.ensureExists(id, workspaceId);
-    await db
+    await this.db
       .delete(primitiveToken)
       .where(
         and(
@@ -144,7 +148,7 @@ export class PrimitiveTokenService {
   }
 
   private async ensureExists(id: string, workspaceId: string): Promise<void> {
-    const [found] = await db
+    const [found] = await this.db
       .select({ id: primitiveToken.id })
       .from(primitiveToken)
       .where(

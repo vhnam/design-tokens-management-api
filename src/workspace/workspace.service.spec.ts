@@ -25,25 +25,22 @@ const deleteMock = jest.fn<{ where: typeof deleteWhereMock }, [unknown]>(
 );
 const eqMock = jest.fn<string, [unknown, unknown]>(() => 'eq-condition');
 
-jest.mock('../config/db', () => ({
-  db: {
-    select: () => selectMock(),
-    insert: (table: unknown) => insertMock(table),
-    update: (table: unknown) => updateMock(table),
-    delete: (table: unknown) => deleteMock(table),
-  },
-}));
-
 jest.mock('drizzle-orm', () => ({
   eq: (left: unknown, right: unknown) => eqMock(left, right),
 }));
 
 describe('WorkspaceService', () => {
   let service: WorkspaceService;
+  const dbMock = {
+    select: () => selectMock(),
+    insert: (table: unknown) => insertMock(table),
+    update: (table: unknown) => updateMock(table),
+    delete: (table: unknown) => deleteMock(table),
+  };
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new WorkspaceService();
+    service = new WorkspaceService(dbMock as never);
   });
 
   it('should create workspace with normalized fields', async () => {

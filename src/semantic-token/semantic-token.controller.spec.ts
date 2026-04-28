@@ -1,5 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 
+import { WorkspaceService } from '../workspace/workspace.service';
+
 import { SemanticTokenController } from './semantic-token.controller';
 import { SemanticTokenService } from './semantic-token.service';
 
@@ -22,21 +24,8 @@ jest.mock('@thallesp/nestjs-better-auth', () => ({
   Session: () => () => undefined,
 }));
 
-jest.mock('../config/db', () => ({
-  db: {
-    select: jest.fn(() => ({
-      from: jest.fn(() => ({
-        limit: jest.fn().mockResolvedValue([]),
-      })),
-    })),
-  },
-}));
-
 describe('SemanticTokenController', () => {
   let controller: SemanticTokenController;
-  const session = {
-    user: { id: 'u1', workspaceId: 'cb1d0ab4-2f8c-4ace-a3e7-cf7f2deec8df' },
-  };
   const semanticTokenService = {
     create: jest.fn(),
     findAll: jest.fn(),
@@ -54,6 +43,12 @@ describe('SemanticTokenController', () => {
         {
           provide: SemanticTokenService,
           useValue: semanticTokenService,
+        },
+        {
+          provide: WorkspaceService,
+          useValue: {
+            findDefaultWorkspaceId: jest.fn().mockResolvedValue(null),
+          },
         },
       ],
     }).compile();
@@ -74,10 +69,13 @@ describe('SemanticTokenController', () => {
       workspaceId: 'cb1d0ab4-2f8c-4ace-a3e7-cf7f2deec8df',
     });
 
-    const result = await controller.create(session as never, {
-      name: 'Text Primary',
-      type: 'color',
-    });
+    const result = await controller.create(
+      'cb1d0ab4-2f8c-4ace-a3e7-cf7f2deec8df',
+      {
+        name: 'Text Primary',
+        type: 'color',
+      },
+    );
 
     expect(semanticTokenService.create).toHaveBeenCalledWith({
       name: 'Text Primary',
@@ -102,7 +100,7 @@ describe('SemanticTokenController', () => {
     });
 
     const result = await controller.update(
-      session as never,
+      'cb1d0ab4-2f8c-4ace-a3e7-cf7f2deec8df',
       'cb1d0ab4-2f8c-4ace-a3e7-cf7f2deec8df',
       { name: 'Text Secondary' },
     );

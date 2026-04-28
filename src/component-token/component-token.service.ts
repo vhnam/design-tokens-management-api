@@ -2,12 +2,14 @@ import { randomUUID } from 'node:crypto';
 
 import {
   BadRequestException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { and, eq } from 'drizzle-orm';
 
-import { db } from '../config/db';
+import type { Database } from '../config/db';
+import { DATABASE } from '../database/database.constants';
 import { componentToken } from '../schema/component-token';
 
 import type {
@@ -22,6 +24,8 @@ type CreateComponentTokenInput = CreateComponentTokenDto & {
 
 @Injectable()
 export class ComponentTokenService {
+  constructor(@Inject(DATABASE) private readonly db: Database) {}
+
   async create(
     createComponentTokenDto: CreateComponentTokenInput,
   ): Promise<ComponentTokenDto> {
@@ -41,7 +45,7 @@ export class ComponentTokenService {
       'Component token workspace is required',
     );
 
-    const [created] = await db
+    const [created] = await this.db
       .insert(componentToken)
       .values({
         id: randomUUID(),
@@ -56,14 +60,14 @@ export class ComponentTokenService {
   }
 
   async findAll(workspaceId: string): Promise<ComponentTokenDto[]> {
-    return db
+    return this.db
       .select()
       .from(componentToken)
       .where(eq(componentToken.workspaceId, workspaceId));
   }
 
   async findOne(id: string, workspaceId: string): Promise<ComponentTokenDto> {
-    const [found] = await db
+    const [found] = await this.db
       .select()
       .from(componentToken)
       .where(
@@ -115,7 +119,7 @@ export class ComponentTokenService {
       throw new BadRequestException('No fields to update');
     }
 
-    const [updated] = await db
+    const [updated] = await this.db
       .update(componentToken)
       .set(values)
       .where(
@@ -131,7 +135,7 @@ export class ComponentTokenService {
 
   async remove(id: string, workspaceId: string): Promise<{ deleted: true }> {
     await this.ensureExists(id, workspaceId);
-    await db
+    await this.db
       .delete(componentToken)
       .where(
         and(
@@ -144,7 +148,7 @@ export class ComponentTokenService {
   }
 
   private async ensureExists(id: string, workspaceId: string): Promise<void> {
-    const [found] = await db
+    const [found] = await this.db
       .select({ id: componentToken.id })
       .from(componentToken)
       .where(

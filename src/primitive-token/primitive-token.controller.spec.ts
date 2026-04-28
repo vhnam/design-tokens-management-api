@@ -1,5 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 
+import { WorkspaceService } from '../workspace/workspace.service';
+
 import { PrimitiveTokenController } from './primitive-token.controller';
 import { PrimitiveTokenService } from './primitive-token.service';
 
@@ -22,21 +24,8 @@ jest.mock('@thallesp/nestjs-better-auth', () => ({
   Session: () => () => undefined,
 }));
 
-jest.mock('../config/db', () => ({
-  db: {
-    select: jest.fn(() => ({
-      from: jest.fn(() => ({
-        limit: jest.fn().mockResolvedValue([]),
-      })),
-    })),
-  },
-}));
-
 describe('PrimitiveTokenController', () => {
   let controller: PrimitiveTokenController;
-  const session = {
-    user: { id: 'u1', workspaceId: 'cb1d0ab4-2f8c-4ace-a3e7-cf7f2deec8df' },
-  };
   const primitiveTokenService = {
     create: jest.fn(),
     findAll: jest.fn(),
@@ -54,6 +43,12 @@ describe('PrimitiveTokenController', () => {
         {
           provide: PrimitiveTokenService,
           useValue: primitiveTokenService,
+        },
+        {
+          provide: WorkspaceService,
+          useValue: {
+            findDefaultWorkspaceId: jest.fn().mockResolvedValue(null),
+          },
         },
       ],
     }).compile();
@@ -74,10 +69,13 @@ describe('PrimitiveTokenController', () => {
       workspaceId: 'cb1d0ab4-2f8c-4ace-a3e7-cf7f2deec8df',
     });
 
-    const result = await controller.create(session as never, {
-      name: 'Primary 500',
-      type: 'color',
-    });
+    const result = await controller.create(
+      'cb1d0ab4-2f8c-4ace-a3e7-cf7f2deec8df',
+      {
+        name: 'Primary 500',
+        type: 'color',
+      },
+    );
 
     expect(primitiveTokenService.create).toHaveBeenCalledWith({
       name: 'Primary 500',
@@ -102,7 +100,7 @@ describe('PrimitiveTokenController', () => {
     });
 
     const result = await controller.update(
-      session as never,
+      'cb1d0ab4-2f8c-4ace-a3e7-cf7f2deec8df',
       'cb1d0ab4-2f8c-4ace-a3e7-cf7f2deec8df',
       { name: 'Primary 600' },
     );

@@ -2,12 +2,14 @@ import { randomUUID } from 'node:crypto';
 
 import {
   BadRequestException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { and, eq } from 'drizzle-orm';
 
-import { db } from '../config/db';
+import type { Database } from '../config/db';
+import { DATABASE } from '../database/database.constants';
 import { semanticToken } from '../schema/semantic-token';
 
 import type {
@@ -22,6 +24,8 @@ type CreateSemanticTokenInput = CreateSemanticTokenDto & {
 
 @Injectable()
 export class SemanticTokenService {
+  constructor(@Inject(DATABASE) private readonly db: Database) {}
+
   async create(
     createSemanticTokenDto: CreateSemanticTokenInput,
   ): Promise<SemanticTokenDto> {
@@ -41,7 +45,7 @@ export class SemanticTokenService {
       'Semantic token workspace is required',
     );
 
-    const [created] = await db
+    const [created] = await this.db
       .insert(semanticToken)
       .values({
         id: randomUUID(),
@@ -56,14 +60,14 @@ export class SemanticTokenService {
   }
 
   async findAll(workspaceId: string): Promise<SemanticTokenDto[]> {
-    return db
+    return this.db
       .select()
       .from(semanticToken)
       .where(eq(semanticToken.workspaceId, workspaceId));
   }
 
   async findOne(id: string, workspaceId: string): Promise<SemanticTokenDto> {
-    const [found] = await db
+    const [found] = await this.db
       .select()
       .from(semanticToken)
       .where(
@@ -115,7 +119,7 @@ export class SemanticTokenService {
       throw new BadRequestException('No fields to update');
     }
 
-    const [updated] = await db
+    const [updated] = await this.db
       .update(semanticToken)
       .set(values)
       .where(
@@ -131,7 +135,7 @@ export class SemanticTokenService {
 
   async remove(id: string, workspaceId: string): Promise<{ deleted: true }> {
     await this.ensureExists(id, workspaceId);
-    await db
+    await this.db
       .delete(semanticToken)
       .where(
         and(
@@ -144,7 +148,7 @@ export class SemanticTokenService {
   }
 
   private async ensureExists(id: string, workspaceId: string): Promise<void> {
-    const [found] = await db
+    const [found] = await this.db
       .select({ id: semanticToken.id })
       .from(semanticToken)
       .where(

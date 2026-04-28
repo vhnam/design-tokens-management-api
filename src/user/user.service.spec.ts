@@ -11,12 +11,6 @@ const updateMock = jest.fn<{ set: typeof setMock }, [unknown]>(() => ({
 }));
 const eqMock = jest.fn<string, [unknown, unknown]>(() => 'eq-condition');
 
-jest.mock('../config/db', () => ({
-  db: {
-    update: (table: unknown) => updateMock(table),
-  },
-}));
-
 jest.mock('drizzle-orm', () => ({
   eq: (left: unknown, right: unknown) => eqMock(left, right),
 }));
@@ -34,11 +28,14 @@ describe('UserService', () => {
     createUploadUrl: jest.fn(),
     getPublicUrl: jest.fn(),
   };
+  const dbMock = {
+    update: (table: unknown) => updateMock(table),
+  };
 
   beforeEach(() => {
     jest.clearAllMocks();
     whereMock.mockResolvedValue(undefined);
-    service = new UserService(mediaService as never);
+    service = new UserService(mediaService as never, dbMock as never);
   });
 
   describe('createAvatarUploadUrl', () => {

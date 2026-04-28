@@ -1,5 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 
+import { WorkspaceService } from '../workspace/workspace.service';
+
 import { ComponentTokenController } from './component-token.controller';
 import { ComponentTokenService } from './component-token.service';
 
@@ -22,21 +24,8 @@ jest.mock('@thallesp/nestjs-better-auth', () => ({
   Session: () => () => undefined,
 }));
 
-jest.mock('../config/db', () => ({
-  db: {
-    select: jest.fn(() => ({
-      from: jest.fn(() => ({
-        limit: jest.fn().mockResolvedValue([]),
-      })),
-    })),
-  },
-}));
-
 describe('ComponentTokenController', () => {
   let controller: ComponentTokenController;
-  const session = {
-    user: { id: 'u1', workspaceId: 'cb1d0ab4-2f8c-4ace-a3e7-cf7f2deec8df' },
-  };
   const componentTokenService = {
     create: jest.fn(),
     findAll: jest.fn(),
@@ -54,6 +43,12 @@ describe('ComponentTokenController', () => {
         {
           provide: ComponentTokenService,
           useValue: componentTokenService,
+        },
+        {
+          provide: WorkspaceService,
+          useValue: {
+            findDefaultWorkspaceId: jest.fn().mockResolvedValue(null),
+          },
         },
       ],
     }).compile();
@@ -74,10 +69,13 @@ describe('ComponentTokenController', () => {
       workspaceId: 'cb1d0ab4-2f8c-4ace-a3e7-cf7f2deec8df',
     });
 
-    const result = await controller.create(session as never, {
-      name: 'Button Primary',
-      type: 'component',
-    });
+    const result = await controller.create(
+      'cb1d0ab4-2f8c-4ace-a3e7-cf7f2deec8df',
+      {
+        name: 'Button Primary',
+        type: 'component',
+      },
+    );
 
     expect(componentTokenService.create).toHaveBeenCalledWith({
       name: 'Button Primary',
@@ -102,7 +100,7 @@ describe('ComponentTokenController', () => {
     });
 
     const result = await controller.update(
-      session as never,
+      'cb1d0ab4-2f8c-4ace-a3e7-cf7f2deec8df',
       'cb1d0ab4-2f8c-4ace-a3e7-cf7f2deec8df',
       { name: 'Button Secondary' },
     );

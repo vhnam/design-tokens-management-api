@@ -1,13 +1,17 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 
-import { db } from '../config/db';
+import type { Database } from '../config/db';
+import { DATABASE } from '../database/database.constants';
 import { MediaService } from '../media/media.service';
 import { user } from '../schema/auth';
 
 @Injectable()
 export class UserService {
-  constructor(private readonly mediaService: MediaService) {}
+  constructor(
+    private readonly mediaService: MediaService,
+    @Inject(DATABASE) private readonly db: Database,
+  ) {}
 
   async createAvatarUploadUrl(
     userId: string,
@@ -26,7 +30,7 @@ export class UserService {
     const key = `users/${userId}.${normalizedExt}`;
     const imageUrl = this.mediaService.getPublicUrl(key);
 
-    await db
+    await this.db
       .update(user)
       .set({
         image: imageUrl,

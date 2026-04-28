@@ -2,12 +2,14 @@ import { randomUUID } from 'node:crypto';
 
 import {
   BadRequestException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 
-import { db } from '../config/db';
+import type { Database } from '../config/db';
+import { DATABASE } from '../database/database.constants';
 import { workspace } from '../schema/workspace';
 
 import type {
@@ -18,11 +20,13 @@ import type {
 
 @Injectable()
 export class WorkspaceService {
+  constructor(@Inject(DATABASE) private readonly db: Database) {}
+
   async create(createWorkspaceDto: CreateWorkspaceDto): Promise<WorkspaceDto> {
     const name = this.normalizeName(createWorkspaceDto.name);
     const image = this.normalizeImage(createWorkspaceDto.image);
 
-    const [created] = await db
+    const [created] = await this.db
       .insert(workspace)
       .values({
         id: randomUUID(),
@@ -35,11 +39,11 @@ export class WorkspaceService {
   }
 
   async findAll(): Promise<WorkspaceDto[]> {
-    return db.select().from(workspace);
+    return this.db.select().from(workspace);
   }
 
   async findOne(id: string): Promise<WorkspaceDto> {
-    const [found] = await db
+    const [found] = await this.db
       .select()
       .from(workspace)
       .where(eq(workspace.id, id));
@@ -71,7 +75,7 @@ export class WorkspaceService {
       throw new BadRequestException('No fields to update');
     }
 
-    const [updated] = await db
+    const [updated] = await this.db
       .update(workspace)
       .set(values)
       .where(eq(workspace.id, id))
@@ -82,13 +86,22 @@ export class WorkspaceService {
 
   async remove(id: string): Promise<{ deleted: true }> {
     await this.ensureExists(id);
-    await db.delete(workspace).where(eq(workspace.id, id));
+    await this.db.delete(workspace).where(eq(workspace.id, id));
 
     return { deleted: true };
   }
 
+  async findDefaultWorkspaceId(): Promise<string | null> {
+    const [found] = await this.db
+      .select({ id: workspace.id })
+      .from(workspace)
+      .limit(1);
+
+    return found?.id ?? null;
+  }
+
   private async ensureExists(id: string): Promise<void> {
-    const [found] = await db
+    const [found] = await this.db
       .select({ id: workspace.id })
       .from(workspace)
       .where(eq(workspace.id, id));
