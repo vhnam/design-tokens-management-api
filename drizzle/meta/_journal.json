@@ -8,6 +8,20 @@
       "when": 1777120791591,
       "tag": "0000_messy_blacklash",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1777382434353,
+      "tag": "0001_freezing_stepford_cuckoos",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1777383966197,
+      "tag": "0002_clumsy_iceman",
+      "breakpoints": true
     }
   ]
 }

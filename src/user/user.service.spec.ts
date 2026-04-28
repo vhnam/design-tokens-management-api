@@ -6,17 +6,19 @@ import { UserService } from './user.service';
 
 const whereMock = jest.fn();
 const setMock = jest.fn(() => ({ where: whereMock }));
-const updateMock = jest.fn(() => ({ set: setMock }));
-const eqMock = jest.fn(() => 'eq-condition');
+const updateMock = jest.fn<{ set: typeof setMock }, [unknown]>(() => ({
+  set: setMock,
+}));
+const eqMock = jest.fn<string, [unknown, unknown]>(() => 'eq-condition');
 
 jest.mock('../config/db', () => ({
   db: {
-    update: updateMock,
+    update: (table: unknown) => updateMock(table),
   },
 }));
 
 jest.mock('drizzle-orm', () => ({
-  eq: eqMock,
+  eq: (left: unknown, right: unknown) => eqMock(left, right),
 }));
 
 jest.mock('../media/media.service', () => ({

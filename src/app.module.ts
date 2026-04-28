@@ -10,6 +10,7 @@ import { env } from './config/env';
 import { EmailModule } from './email/email.module';
 import * as schema from './schema/auth';
 import { UserModule } from './user/user.module';
+import { WorkspaceModule } from './workspace/workspace.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { UserModule } from './user/user.module';
     TerminusModule,
     EmailModule,
     UserModule,
+    WorkspaceModule,
   ],
   controllers: [AppController],
   providers: [AppService],

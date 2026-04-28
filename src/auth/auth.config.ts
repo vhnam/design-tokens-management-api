@@ -1,5 +1,6 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { WorkspaceService } from 'src/workspace/workspace.service';
 
 import { db } from '../config/db';
 import { env } from '../config/env';
@@ -7,6 +8,7 @@ import { EmailService } from '../email/email.service';
 import * as schema from '../schema/auth';
 
 const emailService = new EmailService();
+const workspaceService = new WorkspaceService();
 
 export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
@@ -14,6 +16,7 @@ export const auth = betterAuth({
   baseURL: env.BETTER_AUTH_URL,
   basePath: '/api/auth',
   trustedOrigins: [env.CORS_ORIGIN],
+  revokeSessionsOnPasswordReset: true,
   emailAndPassword: {
     enabled: true,
     autoSignIn: true,
@@ -36,6 +39,12 @@ export const auth = betterAuth({
         to: user.email,
         subject: 'Verify your email address',
         text: `Click the link to verify your email: ${env.CORS_ORIGIN}/auth/verify-email?token=${token}`,
+      });
+    },
+    afterEmailVerification: async () => {
+      await workspaceService.create({
+        name: 'workspace-default',
+        image: null,
       });
     },
   },
