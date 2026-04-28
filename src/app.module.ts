@@ -6,9 +6,12 @@ import { AuthModule } from '@thallesp/nestjs-better-auth';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { auth } from './auth/auth.config';
+import { ComponentTokenModule } from './component-token/component-token.module';
 import { env } from './config/env';
 import { EmailModule } from './email/email.module';
-import * as schema from './schema/auth';
+import { PrimitiveTokenModule } from './primitive-token/primitive-token.module';
+import * as schema from './schema';
+import { SemanticTokenModule } from './semantic-token/semantic-token.module';
 import { UserModule } from './user/user.module';
 import { WorkspaceModule } from './workspace/workspace.module';
 
@@ -36,6 +39,9 @@ import { WorkspaceModule } from './workspace/workspace.module';
     EmailModule,
     UserModule,
     WorkspaceModule,
+    PrimitiveTokenModule,
+    SemanticTokenModule,
+    ComponentTokenModule,
   ],
   controllers: [AppController],
   providers: [AppService],
