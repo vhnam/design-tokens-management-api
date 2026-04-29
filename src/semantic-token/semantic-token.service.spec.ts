@@ -23,8 +23,15 @@ const deleteMock = jest.fn<{ where: typeof deleteWhereMock }, [unknown]>(
     where: deleteWhereMock,
   }),
 );
-const eqMock = jest.fn(() => 'eq-condition');
-const andMock = jest.fn(() => 'and-condition');
+const eqMock = jest.fn((left: unknown, right: unknown) => {
+  void left;
+  void right;
+  return 'eq-condition';
+});
+const andMock = jest.fn((...conditions: unknown[]) => {
+  void conditions;
+  return 'and-condition';
+});
 
 jest.mock('drizzle-orm', () => ({
   eq: (left: unknown, right: unknown) => eqMock(left, right),

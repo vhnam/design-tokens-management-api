@@ -2,7 +2,7 @@ import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Injectable } from '@nestjs/common';
 
-import { getR2Config } from '../config/env';
+import { getR2Config } from '../config/env.config';
 
 @Injectable()
 export class MediaService {

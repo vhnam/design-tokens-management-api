@@ -1,7 +1,7 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 
-import type { Database } from '../config/db';
+import type { Database } from '../config/db.config';
 import { DATABASE } from '../database/database.constants';
 import { MediaService } from '../media/media.service';
 import { user } from '../schema/auth';

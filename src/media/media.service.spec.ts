@@ -19,7 +19,7 @@ jest.mock('@aws-sdk/s3-request-presigner', () => ({
   getSignedUrl: (...args: unknown[]) => getSignedUrlMock(...args) as never,
 }));
 
-jest.mock('../config/env', () => ({
+jest.mock('../config/env.config', () => ({
   getR2Config: () => ({
     accountId: 'acc_123',
     accessKeyId: 'access_key_123',

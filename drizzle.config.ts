@@ -4,6 +4,7 @@ export default {
   schema: [
     './src/schema/auth.ts',
     './src/schema/workspace.ts',
+    './src/schema/workspace-user.ts',
     './src/schema/primitive-token.ts',
     './src/schema/semantic-token.ts',
     './src/schema/component-token.ts',

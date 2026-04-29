@@ -5,9 +5,9 @@ import { AuthModule } from '@thallesp/nestjs-better-auth';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { createAuth } from './auth/auth.config';
 import { ComponentTokenModule } from './component-token/component-token.module';
-import { env } from './config/env';
+import { createAuth } from './config/auth.config';
+import { env } from './config/env.config';
 import { DatabaseModule } from './database/database.module';
 import { EmailModule } from './email/email.module';
 import { EmailService } from './email/email.service';
@@ -21,6 +21,7 @@ import { WorkspaceService } from './workspace/workspace.service';
 @Module({
   imports: [
     AuthModule.forRootAsync({
+      imports: [EmailModule, WorkspaceModule],
       inject: [EmailService, WorkspaceService],
       useFactory: (
         emailService: EmailService,

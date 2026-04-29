@@ -1,8 +1,8 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 
-import { db } from '../config/db';
-import { env } from '../config/env';
+import { db } from '../config/db.config';
+import { env } from '../config/env.config';
 import { EmailService } from '../email/email.service';
 import * as schema from '../schema/auth';
 import { WorkspaceService } from '../workspace/workspace.service';
@@ -42,11 +42,14 @@ export function createAuth(
           text: `Click the link to verify your email: ${env.CORS_ORIGIN}/auth/verify-email?token=${token}`,
         });
       },
-      afterEmailVerification: async () => {
-        await workspaceService.create({
-          name: 'workspace-default',
-          image: null,
-        });
+      afterEmailVerification: async (user) => {
+        await workspaceService.create(
+          {
+            name: 'workspace-default',
+            image: null,
+          },
+          user.id,
+        );
       },
     },
   });

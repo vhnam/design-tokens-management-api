@@ -8,9 +8,10 @@ import {
 } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 
-import type { Database } from '../config/db';
+import type { Database } from '../config/db.config';
 import { DATABASE } from '../database/database.constants';
 import { workspace } from '../schema/workspace';
+import { workspaceUser } from '../schema/workspace-user';
 
 import type {
   CreateWorkspaceDto,
@@ -22,7 +23,10 @@ import type {
 export class WorkspaceService {
   constructor(@Inject(DATABASE) private readonly db: Database) {}
 
-  async create(createWorkspaceDto: CreateWorkspaceDto): Promise<WorkspaceDto> {
+  async create(
+    createWorkspaceDto: CreateWorkspaceDto,
+    userId: string,
+  ): Promise<WorkspaceDto> {
     const name = this.normalizeName(createWorkspaceDto.name);
     const image = this.normalizeImage(createWorkspaceDto.image);
 
@@ -34,6 +38,12 @@ export class WorkspaceService {
         image,
       })
       .returning();
+
+    // Assign the creator to the new workspace.
+    await this.db.insert(workspaceUser).values({
+      workspaceId: created.id,
+      userId,
+    });
 
     return created;
   }
@@ -91,13 +101,14 @@ export class WorkspaceService {
     return { deleted: true };
   }
 
-  async findDefaultWorkspaceId(): Promise<string | null> {
+  async findDefaultWorkspaceId(userId: string): Promise<string | null> {
     const [found] = await this.db
-      .select({ id: workspace.id })
-      .from(workspace)
+      .select({ workspaceId: workspaceUser.workspaceId })
+      .from(workspaceUser)
+      .where(eq(workspaceUser.userId, userId))
       .limit(1);
 
-    return found?.id ?? null;
+    return found?.workspaceId ?? null;
   }
 
   private async ensureExists(id: string): Promise<void> {

@@ -1,6 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 
-import { db } from '../config/db';
+import { db } from '../config/db.config';
 
 import { DATABASE } from './database.constants';
 

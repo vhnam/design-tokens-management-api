@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { and, eq } from 'drizzle-orm';
 
-import type { Database } from '../config/db';
+import type { Database } from '../config/db.config';
 import { DATABASE } from '../database/database.constants';
 import { componentToken } from '../schema/component-token';
 

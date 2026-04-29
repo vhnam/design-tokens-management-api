@@ -30,9 +30,16 @@ export class WorkspaceGuard implements CanActivate {
     }
 
     const fallbackWorkspaceId =
-      await this.workspaceService.findDefaultWorkspaceId();
+      await this.workspaceService.findDefaultWorkspaceId(session.user.id);
     if (!fallbackWorkspaceId) {
-      throw new BadRequestException('Workspace id is required in session');
+      // If the user has no workspace memberships yet (e.g. existing users created
+      // before we introduced workspace_user), create a default workspace and link it.
+      const created = await this.workspaceService.create(
+        { name: 'workspace-default', image: null },
+        session.user.id,
+      );
+      request.workspaceId = created.id;
+      return true;
     }
 
     request.workspaceId = fallbackWorkspaceId;
