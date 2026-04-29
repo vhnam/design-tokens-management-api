@@ -1,56 +1,23 @@
-import { betterAuth } from 'better-auth';
+import type { BetterAuthOptions } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 
 import { db } from '../config/db.config';
 import { env } from '../config/env.config';
-import { EmailService } from '../email/email.service';
 import * as schema from '../schema/auth';
-import { WorkspaceService } from '../workspace/workspace.service';
 
-export function createAuth(
-  emailService: EmailService,
-  workspaceService: WorkspaceService,
-) {
-  return betterAuth({
-    secret: env.BETTER_AUTH_SECRET,
-    database: drizzleAdapter(db, { provider: 'pg', schema }),
-    baseURL: env.BETTER_AUTH_URL,
-    basePath: '/api/auth',
-    trustedOrigins: [env.CORS_ORIGIN],
+export const authConfig: BetterAuthOptions = {
+  secret: env.BETTER_AUTH_SECRET,
+  database: drizzleAdapter(db, { provider: 'pg', schema }),
+  baseURL: env.BETTER_AUTH_URL,
+  basePath: '/api/auth',
+  trustedOrigins: [env.CORS_ORIGIN],
+  emailAndPassword: {
+    enabled: true,
     revokeSessionsOnPasswordReset: true,
-    emailAndPassword: {
-      enabled: true,
-      autoSignIn: true,
-      requireEmailVerification: true,
-      onExistingUserSignUp: async ({ user }) => {
-        await emailService.sendEmail({
-          from: env.RESEND_FROM_EMAIL,
-          to: user.email,
-          subject: 'Sign-up attempt with your email',
-          text: 'Someone tried to create an account using your email address. If this was you, try signing in instead. If not, you can safely ignore this email.',
-        });
-      },
-    },
-    emailVerification: {
-      sendOnSignUp: true,
-      autoSignInAfterVerification: true,
-      sendVerificationEmail: async ({ user, token }) => {
-        await emailService.sendEmail({
-          from: env.RESEND_FROM_EMAIL,
-          to: user.email,
-          subject: 'Verify your email address',
-          text: `Click the link to verify your email: ${env.CORS_ORIGIN}/auth/verify-email?token=${token}`,
-        });
-      },
-      afterEmailVerification: async (user) => {
-        await workspaceService.create(
-          {
-            name: 'workspace-default',
-            image: null,
-          },
-          user.id,
-        );
-      },
-    },
-  });
-}
+    requireEmailVerification: true,
+    resetPasswordTokenExpiresIn: 3600,
+  },
+  emailVerification: {
+    sendOnSignUp: true,
+  },
+};

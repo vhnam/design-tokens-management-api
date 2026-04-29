@@ -3,3 +3,4 @@ export * from './component-token';
 export * from './primitive-token';
 export * from './semantic-token';
 export * from './workspace';
+export * from './workspace-user';

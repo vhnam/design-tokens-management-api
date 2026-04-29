@@ -1,33 +1,30 @@
 import { DrizzlePGModule } from '@knaadh/nestjs-drizzle-pg';
 import { Module } from '@nestjs/common';
 import { TerminusModule } from '@nestjs/terminus';
-import { AuthModule } from '@thallesp/nestjs-better-auth';
+import { AuthModule as NestjsBetterAuthModule } from '@thallesp/nestjs-better-auth';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { AuthModule } from './auth/auth.module';
+import { AuthService } from './auth/auth.service';
 import { ComponentTokenModule } from './component-token/component-token.module';
-import { createAuth } from './config/auth.config';
+import { getDatabaseUrlFromEnv } from './config/db.config';
 import { env } from './config/env.config';
 import { DatabaseModule } from './database/database.module';
 import { EmailModule } from './email/email.module';
-import { EmailService } from './email/email.service';
 import { PrimitiveTokenModule } from './primitive-token/primitive-token.module';
 import * as schema from './schema';
 import { SemanticTokenModule } from './semantic-token/semantic-token.module';
 import { UserModule } from './user/user.module';
 import { WorkspaceModule } from './workspace/workspace.module';
-import { WorkspaceService } from './workspace/workspace.service';
 
 @Module({
   imports: [
-    AuthModule.forRootAsync({
-      imports: [EmailModule, WorkspaceModule],
-      inject: [EmailService, WorkspaceService],
-      useFactory: (
-        emailService: EmailService,
-        workspaceService: WorkspaceService,
-      ) => ({
-        auth: createAuth(emailService, workspaceService),
+    NestjsBetterAuthModule.forRootAsync({
+      imports: [AuthModule],
+      inject: [AuthService],
+      useFactory: (authService: AuthService) => ({
+        auth: authService.createAuth(),
         bodyParser: {
           json: { limit: '2mb' },
           urlencoded: { limit: '2mb', extended: true },
@@ -40,13 +37,14 @@ import { WorkspaceService } from './workspace/workspace.service';
       pg: {
         connection: 'pool',
         config: {
-          connectionString: env.DATABASE_URL,
+          connectionString: getDatabaseUrlFromEnv(env),
         },
       },
       config: { schema },
     }),
     DatabaseModule,
     TerminusModule,
+    AuthModule,
     EmailModule,
     UserModule,
     WorkspaceModule,

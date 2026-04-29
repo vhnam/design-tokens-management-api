@@ -101,13 +101,3 @@ export const verification = pgTable(
     uniqueIndex('verification_identifier_unique').on(table.identifier),
   ],
 );
-
-export const jwks = pgTable('jwks', {
-  id: text('id').primaryKey(),
-  publicKey: text('publicKey').notNull(),
-  privateKey: text('privateKey').notNull(),
-  createdAt: timestamp('createdAt', { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-  expiresAt: timestamp('expiresAt', { withTimezone: true }),
-});

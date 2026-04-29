@@ -1,2 +1,0 @@
--- Placeholder migration to keep journal sequence consistent.
--- Intentionally left empty.

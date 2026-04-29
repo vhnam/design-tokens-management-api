@@ -20,14 +20,23 @@ jest.mock('@aws-sdk/s3-request-presigner', () => ({
 }));
 
 jest.mock('../config/env.config', () => ({
-  getR2Config: () => ({
-    accountId: 'acc_123',
-    accessKeyId: 'access_key_123',
-    secretAccessKey: 'secret_key_123',
-    bucket: 'bucket_123',
-    publicBaseUrl: 'https://cdn.example.com/',
-    endpoint: 'https://acc_123.r2.cloudflarestorage.com',
-  }),
+  env: {
+    CLOUDFLARE_ACCOUNT_ID: 'acc_123',
+    CLOUDFLARE_R2_ACCESS_TOKEN: 'access_key_123',
+    CLOUDFLARE_R2_SECRET_ACCESS_TOKEN: 'secret_key_123',
+    CLOUDFLARE_R2_BUCKET_NAME: 'bucket_123',
+    CLOUDFLARE_R2_PUBLIC_URL: 'https://cdn.example.com/',
+  },
+  getRequiredEnvValue: <T extends Record<string, string>>(
+    runtimeEnv: T,
+    name: keyof T,
+  ): T[keyof T] => {
+    const value = runtimeEnv[name];
+    if (!value) {
+      throw new Error(`Missing required environment variable: ${String(name)}`);
+    }
+    return value;
+  },
 }));
 
 describe('MediaService', () => {
