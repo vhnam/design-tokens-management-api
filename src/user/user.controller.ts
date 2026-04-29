@@ -41,6 +41,15 @@ export class UserController {
     return this.userService.saveAvatarImage(session.user.id, body.extension);
   }
 
+  @Patch('me')
+  @UseGuards(AuthGuard)
+  updateProfile(
+    @Session() session: UserSession,
+    @Body() body: { name?: string },
+  ) {
+    return this.userService.updateProfile(session.user.id, body);
+  }
+
   @Get('public')
   @AllowAnonymous() // Allow anonymous access
   getPublic() {

@@ -31,6 +31,7 @@ jest.mock('../config/env.config', () => ({
   env: {
     RESEND_FROM_EMAIL: 'no-reply@example.com',
     CORS_ORIGIN: 'https://app.example.com',
+    BETTER_AUTH_URL: 'https://api.example.com',
   },
 }));
 
@@ -140,14 +141,14 @@ describe('AuthService', () => {
 
     await config.emailAndPassword.sendResetPassword({
       user: { email: 'reset@example.com' },
-      token: 'reset_token_123',
+      token: 'reset token+123',
     });
 
     expect(sendEmailMock).toHaveBeenCalledWith({
       from: env.RESEND_FROM_EMAIL,
       to: 'reset@example.com',
       subject: 'Reset your password',
-      text: `Click the link to reset your password: ${env.CORS_ORIGIN}/auth/reset-password?token=reset_token_123`,
+      text: 'Click the link to reset your password: https://app.example.com/auth/reset-password?token=reset%20token%2B123',
     });
   });
 
@@ -167,14 +168,14 @@ describe('AuthService', () => {
 
     await config.emailVerification.sendVerificationEmail({
       user: { email: 'verify@example.com' },
-      token: 'verify_token_456',
+      token: 'verify token+456',
     });
 
     expect(sendEmailMock).toHaveBeenCalledWith({
       from: env.RESEND_FROM_EMAIL,
       to: 'verify@example.com',
       subject: 'Verify your email address',
-      text: `Click the link to verify your email: ${env.CORS_ORIGIN}/auth/verify-email?token=verify_token_456`,
+      text: 'Click the link to verify your email: https://app.example.com/auth/verify-email?token=verify%20token%2B456',
     });
   });
 });

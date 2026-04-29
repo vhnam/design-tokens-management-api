@@ -1,12 +1,20 @@
 import { createEnv } from '@t3-oss/env-core';
 import { z } from 'zod';
 
+const strictUrl = z
+  .url()
+  .refine(
+    (value) =>
+      process.env.NODE_ENV !== 'production' || value.startsWith('https://'),
+    'Must use https in production',
+  );
+
 export const env = createEnv({
   server: {
     API_PORT: z.coerce.number().int().positive(),
-    CORS_ORIGIN: z.string().min(1),
-    BETTER_AUTH_SECRET: z.string().min(1),
-    BETTER_AUTH_URL: z.url(),
+    CORS_ORIGIN: strictUrl,
+    BETTER_AUTH_SECRET: z.string().min(32),
+    BETTER_AUTH_URL: strictUrl,
     RESEND_API_KEY: z.string().min(1),
     RESEND_FROM_EMAIL: z.string().min(1),
     DATABASE_URL: z.string().min(1).optional(),

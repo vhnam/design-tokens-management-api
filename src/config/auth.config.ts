@@ -5,12 +5,19 @@ import { db } from '../config/db.config';
 import { env } from '../config/env.config';
 import * as schema from '../schema/auth';
 
+const frontendOrigin = new URL(env.CORS_ORIGIN).origin;
+
 export const authConfig: BetterAuthOptions = {
   secret: env.BETTER_AUTH_SECRET,
   database: drizzleAdapter(db, { provider: 'pg', schema }),
   baseURL: env.BETTER_AUTH_URL,
   basePath: '/api/auth',
-  trustedOrigins: [env.CORS_ORIGIN],
+  trustedOrigins: [frontendOrigin],
+  rateLimit: {
+    enabled: true,
+    window: 60,
+    max: 20,
+  },
   emailAndPassword: {
     enabled: true,
     revokeSessionsOnPasswordReset: true,

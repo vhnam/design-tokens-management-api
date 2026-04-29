@@ -105,6 +105,8 @@ pnpm db:studio
 
 - Better Auth is mounted under `/api/auth`.
 - CORS uses `CORS_ORIGIN` with credentials enabled.
+- `BETTER_AUTH_URL` is the API auth base URL used by Better Auth.
+- `CORS_ORIGIN` is the frontend origin used in auth emails (verify/reset links).
 - Email/password sign-up requires email verification.
 - Verification, password reset, and duplicate sign-up notification emails are sent via Resend.
 
@@ -139,6 +141,9 @@ pnpm db:studio
 ### User routes
 
 - `GET /api/users/me` (requires authenticated session)
+- `POST /api/users/me/avatar/upload-url` (requires authenticated session)
+- `PATCH /api/users/me/avatar` (requires authenticated session)
+- `PATCH /api/users/me` (requires authenticated session)
 - `GET /api/users/public` (anonymous allowed)
 - `GET /api/users/optional` (auth optional)
 

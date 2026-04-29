@@ -41,6 +41,28 @@ export class UserService {
     return { image: imageUrl };
   }
 
+  async updateProfile(userId: string, profile: { name?: string }) {
+    const trimmedName = profile.name?.trim();
+
+    if (trimmedName === undefined) {
+      throw new BadRequestException('No updatable fields provided');
+    }
+
+    if (!trimmedName) {
+      throw new BadRequestException('Name is required');
+    }
+
+    await this.db
+      .update(user)
+      .set({
+        name: trimmedName,
+        updatedAt: new Date(),
+      })
+      .where(eq(user.id, userId));
+
+    return { name: trimmedName };
+  }
+
   private normalizeExtension(extension: string): string {
     const normalized = extension.trim().replace(/^\.+/, '').toLowerCase();
     const allowedExtensions = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif']);

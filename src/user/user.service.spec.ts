@@ -96,4 +96,33 @@ describe('UserService', () => {
       });
     });
   });
+
+  describe('updateProfile', () => {
+    it('should update user name after trimming whitespace', async () => {
+      const result = await service.updateProfile('user_1', {
+        name: '  Updated Name  ',
+      });
+
+      expect(updateMock).toHaveBeenCalledWith(user);
+      expect(setMock).toHaveBeenCalledWith({
+        name: 'Updated Name',
+        updatedAt: expect.any(Date) as Date,
+      });
+      expect(eqMock).toHaveBeenCalledWith(user.id, 'user_1');
+      expect(whereMock).toHaveBeenCalledWith('eq-condition');
+      expect(result).toEqual({ name: 'Updated Name' });
+    });
+
+    it('should throw when no updatable fields are provided', async () => {
+      await expect(service.updateProfile('user_1', {})).rejects.toThrow(
+        new BadRequestException('No updatable fields provided'),
+      );
+    });
+
+    it('should throw when name is empty', async () => {
+      await expect(
+        service.updateProfile('user_1', { name: '   ' }),
+      ).rejects.toThrow(new BadRequestException('Name is required'));
+    });
+  });
 });

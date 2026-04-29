@@ -7,6 +7,7 @@ jest.mock('./user.service', () => ({
   UserService: class {
     createAvatarUploadUrl = jest.fn();
     saveAvatarImage = jest.fn();
+    updateProfile = jest.fn();
   },
 }));
 
@@ -26,6 +27,7 @@ describe('UserController', () => {
   const userService = {
     createAvatarUploadUrl: jest.fn(),
     saveAvatarImage: jest.fn(),
+    updateProfile: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -99,6 +101,23 @@ describe('UserController', () => {
       expect(userService.saveAvatarImage).toHaveBeenCalledWith('user_1', 'png');
       expect(result).toEqual({
         image: 'https://cdn.example.com/users/user_1.png',
+      });
+    });
+  });
+
+  describe('updateProfile', () => {
+    it('should delegate profile update to user service with current user id', async () => {
+      userService.updateProfile.mockResolvedValue({
+        name: 'Updated Name',
+      });
+
+      const session = { user: { id: 'user_1' } };
+      const body = { name: 'Updated Name' };
+      const result = await controller.updateProfile(session as never, body);
+
+      expect(userService.updateProfile).toHaveBeenCalledWith('user_1', body);
+      expect(result).toEqual({
+        name: 'Updated Name',
       });
     });
   });
