@@ -1,6 +1,6 @@
 # Design Tokens Management API
 
-NestJS API using PostgreSQL, Drizzle ORM, and Better Auth.
+NestJS API for design token/workspace management using PostgreSQL, Drizzle ORM, Better Auth, Resend, and Cloudflare R2.
 
 ## Stack
 
@@ -51,6 +51,8 @@ CLOUDFLARE_R2_BUCKET_NAME=...
 CLOUDFLARE_R2_PUBLIC_URL=https://cdn.example.com
 ```
 
+### Option A: run PostgreSQL locally
+
 Create the database (example):
 
 ```bash
@@ -63,7 +65,17 @@ Run migrations:
 pnpm db:migrate
 ```
 
-## Run the app
+### Option B: run with Docker Compose
+
+The compose setup starts both PostgreSQL and the API service.
+
+```bash
+docker compose up --build
+```
+
+The API container sets `DATABASE_URL` to connect to the `db` service automatically.
+
+## Run the API locally
 
 ```bash
 # development
@@ -94,7 +106,22 @@ pnpm db:studio
 - Better Auth is mounted under `/api/auth`.
 - CORS uses `CORS_ORIGIN` with credentials enabled.
 - Email/password sign-up requires email verification.
-- Verification and duplicate sign-up notification emails are sent via Resend.
+- Verification, password reset, and duplicate sign-up notification emails are sent via Resend.
+
+## Health check
+
+- `GET /api/health`
+
+## API modules overview
+
+- `AuthModule` - Better Auth integration, session lifecycle, and auth emails (verification/reset/duplicate sign-up).
+- `UserModule` - user profile endpoints for authenticated, optional-auth, and public access patterns.
+- `WorkspaceModule` - workspace domain and membership-aware access control.
+- `PrimitiveTokenModule` - CRUD for base design tokens.
+- `SemanticTokenModule` - CRUD for semantic tokens mapped to primitives.
+- `ComponentTokenModule` - CRUD for component-scoped token definitions.
+- `DatabaseModule` - shared Drizzle database access.
+- `EmailModule` - Resend-backed transactional email delivery.
 
 ## API routes
 
@@ -104,7 +131,10 @@ pnpm db:studio
 - `POST /api/auth/sign-in/email` - sign in with email/password
 - `POST /api/auth/sign-out` - clear current session
 - `GET /api/auth/get-session` - fetch current session/user
+- `POST /api/auth/forget-password` - request password reset email
+- `POST /api/auth/reset-password` - set new password using reset token
 - `GET /api/auth/verify-email` - verify email using `token` query param
+- `POST /api/auth/send-verification-email` - resend verification email
 
 ### User routes
 
