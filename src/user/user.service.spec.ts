@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 
-import { user } from '../schema/auth';
+import { users } from '../schema/auth.schema';
 
 import { UserService } from './user.service';
 
@@ -84,12 +84,12 @@ describe('UserService', () => {
       expect(mediaService.getPublicUrl).toHaveBeenCalledWith(
         'users/user_1.png',
       );
-      expect(updateMock).toHaveBeenCalledWith(user);
+      expect(updateMock).toHaveBeenCalledWith(users);
       expect(setMock).toHaveBeenCalledWith({
         image: 'https://cdn.example.com/users/user_1.png',
         updatedAt: expect.any(Date) as Date,
       });
-      expect(eqMock).toHaveBeenCalledWith(user.id, 'user_1');
+      expect(eqMock).toHaveBeenCalledWith(users.id, 'user_1');
       expect(whereMock).toHaveBeenCalledWith('eq-condition');
       expect(result).toEqual({
         image: 'https://cdn.example.com/users/user_1.png',
@@ -103,12 +103,12 @@ describe('UserService', () => {
         name: '  Updated Name  ',
       });
 
-      expect(updateMock).toHaveBeenCalledWith(user);
+      expect(updateMock).toHaveBeenCalledWith(users);
       expect(setMock).toHaveBeenCalledWith({
         name: 'Updated Name',
         updatedAt: expect.any(Date) as Date,
       });
-      expect(eqMock).toHaveBeenCalledWith(user.id, 'user_1');
+      expect(eqMock).toHaveBeenCalledWith(users.id, 'user_1');
       expect(whereMock).toHaveBeenCalledWith('eq-condition');
       expect(result).toEqual({ name: 'Updated Name' });
     });

@@ -1,6 +1,6 @@
 {
-  "id": "6c631618-cea3-4bcf-9175-332096ca5de5",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "a8f008b3-c225-4944-ab85-3585215e4c13",
+  "prevId": "6c631618-cea3-4bcf-9175-332096ca5de5",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -634,7 +634,29 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "token_files_workspace_id_name_uidx": {
+          "name": "token_files_workspace_id_name_uidx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "name",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "token_files_owner_id_users_id_fk": {
           "name": "token_files_owner_id_users_id_fk",
@@ -848,6 +870,27 @@
             }
           ],
           "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "token_sets_file_id_name_uidx": {
+          "name": "token_sets_file_id_name_uidx",
+          "columns": [
+            {
+              "expression": "file_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "name",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
           "concurrently": false,
           "method": "btree",
           "with": {}

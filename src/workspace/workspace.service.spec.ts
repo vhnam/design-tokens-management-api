@@ -1,19 +1,48 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 
-import { workspace } from '../schema/workspace';
+import { workspaceMembers, workspaces } from '../schema/workspaces.schema';
 
-import { WorkspaceDto } from './workspace.dto';
 import { WorkspaceService } from './workspace.service';
+
+type WorkspaceRowInsert = {
+  id: string;
+  name: string;
+  image: string | null;
+  ownerId: string;
+};
+
+type WorkspaceMemberInsert = {
+  id: string;
+  workspaceId: string;
+  userId: string;
+  role: string;
+};
+
+let selectPromiseResult: unknown[] = [];
 
 const returningMock = jest.fn();
 const whereMock = jest.fn(() => ({ returning: returningMock }));
 const setMock = jest.fn(() => ({ where: whereMock }));
-const valuesMock = jest.fn(() => ({ returning: returningMock }));
-const fromMock = jest.fn(() => ({ where: whereMock }));
-const selectMock = jest.fn(() => ({ from: fromMock }));
-const insertMock = jest.fn<{ values: typeof valuesMock }, [unknown]>(() => ({
-  values: valuesMock,
-}));
+
+const insertValuesMockFirst = jest.fn(() => ({
+  returning: returningMock,
+})) as unknown as jest.MockedFunction<
+  (row: WorkspaceRowInsert) => { returning: typeof returningMock }
+>;
+const insertValuesMockLater = jest.fn(() => ({
+  returning: jest.fn(),
+})) as unknown as jest.MockedFunction<
+  (row: WorkspaceMemberInsert) => { returning: jest.Mock }
+>;
+
+type DbInsertChain = {
+  values: typeof insertValuesMockFirst | typeof insertValuesMockLater;
+};
+
+const insertMock = jest.fn() as jest.MockedFunction<
+  (table: unknown) => DbInsertChain
+>;
+
 const updateMock = jest.fn<{ set: typeof setMock }, [unknown]>(() => ({
   set: setMock,
 }));
@@ -32,14 +61,37 @@ jest.mock('drizzle-orm', () => ({
 describe('WorkspaceService', () => {
   let service: WorkspaceService;
   const dbMock = {
-    select: () => selectMock(),
-    insert: (table: unknown) => insertMock(table),
+    select: jest.fn(() => ({
+      from: jest.fn(() => ({
+        where: jest.fn(() => ({
+          limit: jest.fn(() => Promise.resolve(selectPromiseResult)),
+          then(onFulfilled: (v: unknown) => unknown, onRejected?: unknown) {
+            return Promise.resolve(selectPromiseResult).then(
+              onFulfilled,
+              onRejected as Parameters<Promise<unknown>['then']>[1],
+            );
+          },
+        })),
+      })),
+    })),
+    insert: (table: unknown): DbInsertChain => insertMock(table),
     update: (table: unknown) => updateMock(table),
     delete: (table: unknown) => deleteMock(table),
   };
 
   beforeEach(() => {
     jest.clearAllMocks();
+    selectPromiseResult = [];
+    returningMock.mockReset();
+
+    insertMock.mockReset();
+    insertMock.mockImplementationOnce(() => ({
+      values: insertValuesMockFirst,
+    }));
+    insertMock.mockImplementation(() => ({
+      values: insertValuesMockLater,
+    }));
+
     service = new WorkspaceService(dbMock as never);
   });
 
@@ -49,31 +101,55 @@ describe('WorkspaceService', () => {
         id: 'cb1d0ab4-2f8c-4ace-a3e7-cf7f2deec8df',
         name: 'Design Team',
         image: null,
+        ownerId: 'owner-1',
       },
     ]);
 
-    const result = await service.create({
-      name: '  Design Team  ',
-      image: ' ',
-    });
+    const userId = 'owner-1';
 
-    expect(insertMock).toHaveBeenCalledWith(workspace);
-    expect(valuesMock).toHaveBeenCalledWith({
-      id: expect.any(String) as string,
+    insertValuesMockLater.mockResolvedValue([] as never);
+
+    const result = await service.create(
+      {
+        name: '  Design Team  ',
+        image: ' ',
+      },
+      userId,
+    );
+
+    expect(insertMock).toHaveBeenNthCalledWith(1, workspaces);
+    const workspaceVals = insertValuesMockFirst.mock.calls[0]?.[0];
+    expect(workspaceVals).toBeDefined();
+    expect(workspaceVals).toMatchObject({
       name: 'Design Team',
       image: null,
+      ownerId: userId,
     });
+    expect(typeof workspaceVals?.id).toBe('string');
+    expect(workspaceVals?.id.length).toBeGreaterThan(0);
+
+    expect(insertMock).toHaveBeenNthCalledWith(2, workspaceMembers);
+    const memberVals = insertValuesMockLater.mock.calls[0]?.[0];
+    expect(memberVals).toBeDefined();
+    expect(memberVals).toMatchObject({
+      workspaceId: 'cb1d0ab4-2f8c-4ace-a3e7-cf7f2deec8df',
+      userId,
+      role: 'owner',
+    });
+    expect(typeof memberVals?.id).toBe('string');
+    expect(memberVals?.id.length).toBeGreaterThan(0);
+
     expect(result.name).toBe('Design Team');
   });
 
   it('should throw if create name is empty', async () => {
-    await expect(service.create({ name: '   ' })).rejects.toThrow(
-      new BadRequestException('Workspace name is required'),
-    );
+    await expect(
+      service.create({ name: '   ', image: null }, 'u'),
+    ).rejects.toThrow(new BadRequestException('Workspace name is required'));
   });
 
   it('should throw if workspace does not exist', async () => {
-    whereMock.mockResolvedValue([] as never) as unknown as WorkspaceDto[];
+    selectPromiseResult = [];
 
     await expect(
       service.findOne('cb1d0ab4-2f8c-4ace-a3e7-cf7f2deec8df'),
@@ -81,9 +157,7 @@ describe('WorkspaceService', () => {
   });
 
   it('should reject empty update payload', async () => {
-    whereMock.mockResolvedValue([
-      { id: 'cb1d0ab4-2f8c-4ace-a3e7-cf7f2deec8df' },
-    ] as never) as unknown as WorkspaceDto[];
+    selectPromiseResult = [{ id: 'cb1d0ab4-2f8c-4ace-a3e7-cf7f2deec8df' }];
 
     await expect(
       service.update('cb1d0ab4-2f8c-4ace-a3e7-cf7f2deec8df', {}),
@@ -91,16 +165,14 @@ describe('WorkspaceService', () => {
   });
 
   it('should delete workspace and return success payload', async () => {
-    whereMock.mockResolvedValue([
-      { id: 'cb1d0ab4-2f8c-4ace-a3e7-cf7f2deec8df' },
-    ] as never) as unknown as WorkspaceDto[];
+    selectPromiseResult = [{ id: 'cb1d0ab4-2f8c-4ace-a3e7-cf7f2deec8df' }];
     deleteWhereMock.mockResolvedValue(undefined);
 
     const result = await service.remove('cb1d0ab4-2f8c-4ace-a3e7-cf7f2deec8df');
 
-    expect(deleteMock).toHaveBeenCalledWith(workspace);
+    expect(deleteMock).toHaveBeenCalledWith(workspaces);
     expect(eqMock).toHaveBeenCalledWith(
-      workspace.id,
+      workspaces.id,
       'cb1d0ab4-2f8c-4ace-a3e7-cf7f2deec8df',
     );
     expect(result).toEqual({ deleted: true });

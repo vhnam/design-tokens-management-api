@@ -10,8 +10,7 @@ import { eq } from 'drizzle-orm';
 
 import type { Database } from '../config/db.config';
 import { DATABASE } from '../database/database.constants';
-import { workspace } from '../schema/workspace';
-import { workspaceUser } from '../schema/workspace-user';
+import { workspaceMembers, workspaces } from '../schema/workspaces.schema';
 
 import type {
   CreateWorkspaceDto,
@@ -29,34 +28,37 @@ export class WorkspaceService {
   ): Promise<WorkspaceDto> {
     const name = this.normalizeName(createWorkspaceDto.name);
     const image = this.normalizeImage(createWorkspaceDto.image);
+    const ownerId = userId;
 
     const [created] = await this.db
-      .insert(workspace)
+      .insert(workspaces)
       .values({
         id: randomUUID(),
         name,
         image,
+        ownerId,
       })
       .returning();
 
-    // Assign the creator to the new workspace.
-    await this.db.insert(workspaceUser).values({
+    await this.db.insert(workspaceMembers).values({
+      id: randomUUID(),
       workspaceId: created.id,
       userId,
+      role: 'owner',
     });
 
     return created;
   }
 
   async findAll(): Promise<WorkspaceDto[]> {
-    return this.db.select().from(workspace);
+    return this.db.select().from(workspaces);
   }
 
   async findOne(id: string): Promise<WorkspaceDto> {
     const [found] = await this.db
       .select()
-      .from(workspace)
-      .where(eq(workspace.id, id));
+      .from(workspaces)
+      .where(eq(workspaces.id, id));
 
     if (!found) {
       throw new NotFoundException('Workspace not found');
@@ -86,9 +88,9 @@ export class WorkspaceService {
     }
 
     const [updated] = await this.db
-      .update(workspace)
+      .update(workspaces)
       .set(values)
-      .where(eq(workspace.id, id))
+      .where(eq(workspaces.id, id))
       .returning();
 
     return updated;
@@ -96,16 +98,16 @@ export class WorkspaceService {
 
   async remove(id: string): Promise<{ deleted: true }> {
     await this.ensureExists(id);
-    await this.db.delete(workspace).where(eq(workspace.id, id));
+    await this.db.delete(workspaces).where(eq(workspaces.id, id));
 
     return { deleted: true };
   }
 
   async findDefaultWorkspaceId(userId: string): Promise<string | null> {
     const [found] = await this.db
-      .select({ workspaceId: workspaceUser.workspaceId })
-      .from(workspaceUser)
-      .where(eq(workspaceUser.userId, userId))
+      .select({ workspaceId: workspaceMembers.workspaceId })
+      .from(workspaceMembers)
+      .where(eq(workspaceMembers.userId, userId))
       .limit(1);
 
     return found?.workspaceId ?? null;
@@ -113,9 +115,9 @@ export class WorkspaceService {
 
   private async ensureExists(id: string): Promise<void> {
     const [found] = await this.db
-      .select({ id: workspace.id })
-      .from(workspace)
-      .where(eq(workspace.id, id));
+      .select({ id: workspaces.id })
+      .from(workspaces)
+      .where(eq(workspaces.id, id));
 
     if (!found) {
       throw new NotFoundException('Workspace not found');

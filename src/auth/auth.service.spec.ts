@@ -5,10 +5,34 @@ import { EmailService } from '../email/email.service';
 
 import { AuthService } from './auth.service';
 
-const betterAuthMock = jest.fn();
+type BetterAuthMergedConfig = {
+  emailAndPassword?: {
+    enabled?: boolean;
+    onExistingUserSignUp?: (_args: {
+      user: { email: string };
+    }) => Promise<void>;
+    sendResetPassword?: (_args: {
+      user: { email: string };
+      token: string;
+    }) => Promise<void>;
+  };
+  emailVerification?: {
+    sendVerificationEmail?: (_args: {
+      user: { email: string };
+      token: string;
+    }) => Promise<void>;
+  };
+};
+
+const betterAuthMock = jest.fn((): { instance: string } => ({
+  instance: 'auth',
+})) as jest.MockedFunction<
+  (config: BetterAuthMergedConfig) => { instance: string }
+>;
 
 jest.mock('better-auth', () => ({
-  betterAuth: (...args: unknown[]) => betterAuthMock(...args),
+  betterAuth: (...args: [BetterAuthMergedConfig]): { instance: string } =>
+    betterAuthMock(...args),
 }));
 
 jest.mock('../config/auth.config', () => ({
@@ -58,62 +82,28 @@ describe('AuthService', () => {
     service = module.get<AuthService>(AuthService);
   });
 
-  it('should build better-auth instance with overridden callbacks', async () => {
+  it('should build better-auth instance with overridden callbacks', () => {
     const authInstance = service.createAuth();
 
     expect(authInstance).toEqual({ instance: 'auth' });
     expect(betterAuthMock).toHaveBeenCalledTimes(1);
 
-    const config = betterAuthMock.mock.calls[0][0] as {
-      emailAndPassword: {
-        enabled: boolean;
-        onExistingUserSignUp: ({
-          user,
-        }: {
-          user: { email: string };
-        }) => Promise<void>;
-        sendResetPassword: ({
-          user,
-          token,
-        }: {
-          user: { email: string };
-          token: string;
-        }) => Promise<void>;
-      };
-      emailVerification: {
-        sendVerificationEmail: ({
-          user,
-          token,
-        }: {
-          user: { email: string };
-          token: string;
-        }) => Promise<void>;
-      };
-    };
-
-    expect(config.emailAndPassword.enabled).toBe(true);
-    expect(typeof config.emailAndPassword.onExistingUserSignUp).toBe(
-      'function',
-    );
-    expect(typeof config.emailAndPassword.sendResetPassword).toBe('function');
-    expect(typeof config.emailVerification.sendVerificationEmail).toBe(
+    const cfg = betterAuthMock.mock.calls[0]?.[0];
+    expect(cfg?.emailAndPassword?.enabled).toBe(true);
+    expect(typeof cfg?.emailAndPassword?.onExistingUserSignUp).toBe('function');
+    expect(typeof cfg?.emailAndPassword?.sendResetPassword).toBe('function');
+    expect(typeof cfg?.emailVerification?.sendVerificationEmail).toBe(
       'function',
     );
   });
 
   it('should send email when sign-up happens for an existing user', async () => {
     service.createAuth();
-    const config = betterAuthMock.mock.calls[0][0] as {
-      emailAndPassword: {
-        onExistingUserSignUp: ({
-          user,
-        }: {
-          user: { email: string };
-        }) => Promise<void>;
-      };
-    };
 
-    await config.emailAndPassword.onExistingUserSignUp({
+    const onExisting =
+      betterAuthMock.mock.calls[0]?.[0].emailAndPassword?.onExistingUserSignUp;
+    expect(onExisting).toBeDefined();
+    await onExisting?.({
       user: { email: 'existing@example.com' },
     });
 
@@ -127,19 +117,11 @@ describe('AuthService', () => {
 
   it('should send reset password email with frontend URL token', async () => {
     service.createAuth();
-    const config = betterAuthMock.mock.calls[0][0] as {
-      emailAndPassword: {
-        sendResetPassword: ({
-          user,
-          token,
-        }: {
-          user: { email: string };
-          token: string;
-        }) => Promise<void>;
-      };
-    };
 
-    await config.emailAndPassword.sendResetPassword({
+    const sendReset =
+      betterAuthMock.mock.calls[0]?.[0].emailAndPassword?.sendResetPassword;
+    expect(sendReset).toBeDefined();
+    await sendReset?.({
       user: { email: 'reset@example.com' },
       token: 'reset token+123',
     });
@@ -154,19 +136,12 @@ describe('AuthService', () => {
 
   it('should send verification email with frontend URL token', async () => {
     service.createAuth();
-    const config = betterAuthMock.mock.calls[0][0] as {
-      emailVerification: {
-        sendVerificationEmail: ({
-          user,
-          token,
-        }: {
-          user: { email: string };
-          token: string;
-        }) => Promise<void>;
-      };
-    };
 
-    await config.emailVerification.sendVerificationEmail({
+    const sendVerify =
+      betterAuthMock.mock.calls[0]?.[0].emailVerification
+        ?.sendVerificationEmail;
+    expect(sendVerify).toBeDefined();
+    await sendVerify?.({
       user: { email: 'verify@example.com' },
       token: 'verify token+456',
     });

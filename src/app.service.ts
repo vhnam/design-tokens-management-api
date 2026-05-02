@@ -7,7 +7,7 @@ import {
 import { sql } from 'drizzle-orm';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 
-import * as schema from './schema/auth';
+import * as schema from './schema/auth.schema';
 
 @Injectable()
 export class AppService {

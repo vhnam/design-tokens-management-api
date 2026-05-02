@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm';
 import type { Database } from '../config/db.config';
 import { DATABASE } from '../database/database.constants';
 import { MediaService } from '../media/media.service';
-import { user } from '../schema/auth';
+import { users } from '../schema/auth.schema';
 
 @Injectable()
 export class UserService {
@@ -31,12 +31,12 @@ export class UserService {
     const imageUrl = this.mediaService.getPublicUrl(key);
 
     await this.db
-      .update(user)
+      .update(users)
       .set({
         image: imageUrl,
         updatedAt: new Date(),
       })
-      .where(eq(user.id, userId));
+      .where(eq(users.id, userId));
 
     return { image: imageUrl };
   }
@@ -53,12 +53,12 @@ export class UserService {
     }
 
     await this.db
-      .update(user)
+      .update(users)
       .set({
         name: trimmedName,
         updatedAt: new Date(),
       })
-      .where(eq(user.id, userId));
+      .where(eq(users.id, userId));
 
     return { name: trimmedName };
   }

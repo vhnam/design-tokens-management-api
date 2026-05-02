@@ -3,13 +3,17 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 
 import { db } from '../config/db.config';
 import { env } from '../config/env.config';
-import * as schema from '../schema/auth';
+import * as schema from '../schema/auth.schema';
 
 const frontendOrigin = new URL(env.CORS_ORIGIN).origin;
 
 export const authConfig: BetterAuthOptions = {
   secret: env.BETTER_AUTH_SECRET,
-  database: drizzleAdapter(db, { provider: 'pg', schema }),
+  database: drizzleAdapter(db, {
+    provider: 'pg',
+    schema,
+    usePlural: true,
+  }),
   baseURL: env.BETTER_AUTH_URL,
   basePath: '/api/auth',
   trustedOrigins: [frontendOrigin],
