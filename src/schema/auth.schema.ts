@@ -111,9 +111,9 @@ export const organizations = pgTable('organizations', {
   slug: varchar('slug', { length: 255 }).notNull().unique(),
   logo: text('logo'),
   metadata: text('metadata'),
-  createdBy: text('created_by')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
+  createdBy: text('created_by').references(() => users.id, {
+    onDelete: 'cascade',
+  }),
   createdAt: timestamp('created_at', {
     precision: 6,
     withTimezone: true,

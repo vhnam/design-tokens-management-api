@@ -69,7 +69,7 @@ export class PrimitiveTokenService {
 
     if (!groupId) {
       await ensureTokenHierarchyBootstrap(this.db, {
-        ownerId,
+        ownerId: ownerId ?? '',
         organizationId,
         fileName: PRIMITIVE_FILE_NAME,
         groupName: PRIMITIVE_GROUP_NAME,
@@ -216,7 +216,7 @@ export class PrimitiveTokenService {
 
   private async ensureOrganization(
     organizationId: string,
-  ): Promise<{ ownerId: string }> {
+  ): Promise<{ ownerId: string | null }> {
     const [org] = await this.db
       .select({ ownerId: organizations.createdBy })
       .from(organizations)
@@ -227,7 +227,7 @@ export class PrimitiveTokenService {
       throw new NotFoundException('Organization not found');
     }
 
-    return org;
+    return { ownerId: org.ownerId ?? null };
   }
 
   private async resolvePrimitiveGroupId(

@@ -12,6 +12,7 @@ import { env } from './config/env.config';
 import { DatabaseModule } from './database/database.module';
 import { EmailModule } from './email/email.module';
 import { PrimitiveTokenModule } from './primitive-token/primitive-token.module';
+import { ProjectModule } from './project/project.module';
 import * as schema from './schema';
 import { UserModule } from './user/user.module';
 
@@ -44,6 +45,7 @@ import { UserModule } from './user/user.module';
     AuthModule,
     EmailModule,
     UserModule,
+    ProjectModule,
     PrimitiveTokenModule,
   ],
   controllers: [AppController],
