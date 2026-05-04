@@ -7,8 +7,7 @@ import { boolean } from 'drizzle-orm/pg-core';
 
 import { TokenLevel, TokenType } from '../enums/token.enum';
 
-import { users } from './auth.schema';
-import { workspaces } from './workspaces.schema';
+import { organizations, users } from './auth.schema';
 
 export const tokenLevelEnum = pgEnum('token_level', [
   'primitive',
@@ -44,14 +43,17 @@ export const tokenFiles = pgTable(
     ownerId: text('owner_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
-    workspaceId: text('workspace_id')
+    organizationId: text('organization_id')
       .notNull()
-      .references(() => workspaces.id, { onDelete: 'cascade' }),
+      .references(() => organizations.id, { onDelete: 'cascade' }),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
   (t) => [
-    uniqueIndex('token_files_workspace_id_name_uidx').on(t.workspaceId, t.name),
+    uniqueIndex('token_files_organization_id_name_uidx').on(
+      t.organizationId,
+      t.name,
+    ),
   ],
 );
 

@@ -9,13 +9,10 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import {
-  AuthGuard,
-  // Session is resolved by AuthGuard and workspace by WorkspaceGuard
-} from '@thallesp/nestjs-better-auth';
+import { AuthGuard } from '@thallesp/nestjs-better-auth';
 
-import { WorkspaceId } from '../common/decorators/workspace-id.decorator';
-import { WorkspaceGuard } from '../common/guards/workspace.guard';
+import { OrganizationId } from '../common/decorators/organization-id.decorator';
+import { OrganizationGuard } from '../common/guards/organization.guard';
 
 import type {
   CreatePrimitiveTokenDto,
@@ -24,52 +21,52 @@ import type {
 import { PrimitiveTokenService } from './primitive-token.service';
 
 @Controller('primitive-tokens')
-@UseGuards(AuthGuard, WorkspaceGuard)
+@UseGuards(AuthGuard, OrganizationGuard)
 export class PrimitiveTokenController {
   constructor(private readonly primitiveTokenService: PrimitiveTokenService) {}
 
   @Post()
   create(
-    @WorkspaceId() workspaceId: string,
+    @OrganizationId() organizationId: string,
     @Body() createPrimitiveTokenDto: CreatePrimitiveTokenDto,
   ) {
     return this.primitiveTokenService.create({
       ...createPrimitiveTokenDto,
-      workspaceId,
+      organizationId,
     });
   }
 
   @Get()
-  findAll(@WorkspaceId() workspaceId: string) {
-    return this.primitiveTokenService.findAll(workspaceId);
+  findAll(@OrganizationId() organizationId: string) {
+    return this.primitiveTokenService.findAll(organizationId);
   }
 
   @Get(':id')
   findOne(
-    @WorkspaceId() workspaceId: string,
+    @OrganizationId() organizationId: string,
     @Param('id', new ParseUUIDPipe()) id: string,
   ) {
-    return this.primitiveTokenService.findOne(id, workspaceId);
+    return this.primitiveTokenService.findOne(id, organizationId);
   }
 
   @Patch(':id')
   update(
-    @WorkspaceId() workspaceId: string,
+    @OrganizationId() organizationId: string,
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() updatePrimitiveTokenDto: UpdatePrimitiveTokenDto,
   ) {
     return this.primitiveTokenService.update(
       id,
-      workspaceId,
+      organizationId,
       updatePrimitiveTokenDto,
     );
   }
 
   @Delete(':id')
   remove(
-    @WorkspaceId() workspaceId: string,
+    @OrganizationId() organizationId: string,
     @Param('id', new ParseUUIDPipe()) id: string,
   ) {
-    return this.primitiveTokenService.remove(id, workspaceId);
+    return this.primitiveTokenService.remove(id, organizationId);
   }
 }

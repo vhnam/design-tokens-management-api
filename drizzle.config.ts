@@ -5,11 +5,7 @@ import { getDatabaseUrlFromEnv } from './src/config/db.config';
 import { env } from './src/config/env.config';
 
 export default {
-  schema: [
-    './src/schema/auth.schema.ts',
-    './src/schema/tokens.schema.ts',
-    './src/schema/workspaces.schema.ts',
-  ],
+  schema: ['./src/schema/auth.schema.ts', './src/schema/tokens.schema.ts'],
   out: './drizzle',
   dialect: 'postgresql',
   dbCredentials: {

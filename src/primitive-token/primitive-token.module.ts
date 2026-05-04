@@ -1,14 +1,12 @@
 import { Module } from '@nestjs/common';
 
-import { WorkspaceGuard } from '../common/guards/workspace.guard';
-import { WorkspaceModule } from '../workspace/workspace.module';
+import { OrganizationGuard } from '../common/guards/organization.guard';
 
 import { PrimitiveTokenController } from './primitive-token.controller';
 import { PrimitiveTokenService } from './primitive-token.service';
 
 @Module({
-  imports: [WorkspaceModule],
   controllers: [PrimitiveTokenController],
-  providers: [PrimitiveTokenService, WorkspaceGuard],
+  providers: [PrimitiveTokenService, OrganizationGuard],
 })
 export class PrimitiveTokenModule {}

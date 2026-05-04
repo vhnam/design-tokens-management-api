@@ -16,12 +16,44 @@ CREATE TABLE "accounts" (
 	"updatedAt" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "invitations" (
+	"id" text PRIMARY KEY NOT NULL,
+	"email" text NOT NULL,
+	"inviter_id" text NOT NULL,
+	"organization_id" text NOT NULL,
+	"role" text,
+	"status" text NOT NULL,
+	"created_at" timestamp (6) with time zone DEFAULT now() NOT NULL,
+	"expires_at" timestamp (6) with time zone NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "members" (
+	"id" text PRIMARY KEY NOT NULL,
+	"user_id" text NOT NULL,
+	"organization_id" text NOT NULL,
+	"role" text NOT NULL,
+	"created_at" timestamp (6) with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "organizations" (
+	"id" text PRIMARY KEY NOT NULL,
+	"name" text NOT NULL,
+	"slug" varchar(255) NOT NULL,
+	"logo" text,
+	"metadata" text,
+	"created_by" text NOT NULL,
+	"created_at" timestamp (6) with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "organizations_slug_unique" UNIQUE("slug")
+);
+--> statement-breakpoint
 CREATE TABLE "sessions" (
 	"id" text PRIMARY KEY NOT NULL,
 	"token" text NOT NULL,
 	"userId" text NOT NULL,
 	"ipAddress" text,
 	"userAgent" text,
+	"active_organization_id" text,
+	"active_team_id" text,
 	"expiresAt" timestamp with time zone NOT NULL,
 	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
 	"updatedAt" timestamp with time zone DEFAULT now() NOT NULL
@@ -67,7 +99,7 @@ CREATE TABLE "token_files" (
 	"name" text NOT NULL,
 	"description" text,
 	"owner_id" text NOT NULL,
-	"workspace_id" text NOT NULL,
+	"organization_id" text NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
@@ -121,40 +153,25 @@ CREATE TABLE "tokens" (
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "workspace_members" (
-	"id" text PRIMARY KEY NOT NULL,
-	"workspace_id" text NOT NULL,
-	"user_id" text NOT NULL,
-	"role" text DEFAULT 'viewer' NOT NULL,
-	"joined_at" timestamp DEFAULT now() NOT NULL
-);
---> statement-breakpoint
-CREATE TABLE "workspace" (
-	"id" text PRIMARY KEY NOT NULL,
-	"name" text NOT NULL,
-	"image" text,
-	"owner_id" text NOT NULL,
-	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
-);
---> statement-breakpoint
 ALTER TABLE "accounts" ADD CONSTRAINT "accounts_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "invitations" ADD CONSTRAINT "invitations_inviter_id_users_id_fk" FOREIGN KEY ("inviter_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "invitations" ADD CONSTRAINT "invitations_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "members" ADD CONSTRAINT "members_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "members" ADD CONSTRAINT "members_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "organizations" ADD CONSTRAINT "organizations_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "sessions" ADD CONSTRAINT "sessions_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "token_alias_refs" ADD CONSTRAINT "token_alias_refs_from_token_id_tokens_id_fk" FOREIGN KEY ("from_token_id") REFERENCES "public"."tokens"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "token_alias_refs" ADD CONSTRAINT "token_alias_refs_to_token_id_tokens_id_fk" FOREIGN KEY ("to_token_id") REFERENCES "public"."tokens"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "token_alias_refs" ADD CONSTRAINT "token_alias_refs_from_composite_property_id_token_composite_properties_id_fk" FOREIGN KEY ("from_composite_property_id") REFERENCES "public"."token_composite_properties"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "token_composite_properties" ADD CONSTRAINT "token_composite_properties_token_id_tokens_id_fk" FOREIGN KEY ("token_id") REFERENCES "public"."tokens"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "token_files" ADD CONSTRAINT "token_files_owner_id_users_id_fk" FOREIGN KEY ("owner_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "token_files" ADD CONSTRAINT "token_files_workspace_id_workspace_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspace"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "token_files" ADD CONSTRAINT "token_files_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "token_groups" ADD CONSTRAINT "token_groups_set_id_token_sets_id_fk" FOREIGN KEY ("set_id") REFERENCES "public"."token_sets"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "token_sets" ADD CONSTRAINT "token_sets_file_id_token_files_id_fk" FOREIGN KEY ("file_id") REFERENCES "public"."token_files"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "token_versions" ADD CONSTRAINT "token_versions_token_id_tokens_id_fk" FOREIGN KEY ("token_id") REFERENCES "public"."tokens"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "token_versions" ADD CONSTRAINT "token_versions_changed_by_user_id_users_id_fk" FOREIGN KEY ("changed_by_user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "token_versions" ADD CONSTRAINT "token_versions_composite_property_id_token_composite_properties_id_fk" FOREIGN KEY ("composite_property_id") REFERENCES "public"."token_composite_properties"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "tokens" ADD CONSTRAINT "tokens_group_id_token_groups_id_fk" FOREIGN KEY ("group_id") REFERENCES "public"."token_groups"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "workspace_members" ADD CONSTRAINT "workspace_members_workspace_id_workspace_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspace"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "workspace_members" ADD CONSTRAINT "workspace_members_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "workspace" ADD CONSTRAINT "workspace_owner_id_users_id_fk" FOREIGN KEY ("owner_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE UNIQUE INDEX "account_provider_account_unique" ON "accounts" USING btree ("providerId","accountId");--> statement-breakpoint
 CREATE INDEX "account_user_id_idx" ON "accounts" USING btree ("userId");--> statement-breakpoint
 CREATE UNIQUE INDEX "session_token_unique" ON "sessions" USING btree ("token");--> statement-breakpoint
@@ -164,9 +181,11 @@ CREATE UNIQUE INDEX "verification_identifier_unique" ON "verifications" USING bt
 CREATE INDEX "alias_refs_from_idx" ON "token_alias_refs" USING btree ("from_token_id");--> statement-breakpoint
 CREATE INDEX "alias_refs_to_idx" ON "token_alias_refs" USING btree ("to_token_id");--> statement-breakpoint
 CREATE INDEX "composite_props_token_id_idx" ON "token_composite_properties" USING btree ("token_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "token_files_organization_id_name_uidx" ON "token_files" USING btree ("organization_id","name");--> statement-breakpoint
 CREATE INDEX "token_groups_set_id_idx" ON "token_groups" USING btree ("set_id");--> statement-breakpoint
 CREATE INDEX "token_groups_parent_id_idx" ON "token_groups" USING btree ("parent_group_id");--> statement-breakpoint
 CREATE INDEX "token_sets_file_id_idx" ON "token_sets" USING btree ("file_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "token_sets_file_id_name_uidx" ON "token_sets" USING btree ("file_id","name");--> statement-breakpoint
 CREATE INDEX "token_versions_token_id_idx" ON "token_versions" USING btree ("token_id");--> statement-breakpoint
 CREATE INDEX "token_versions_changed_at_idx" ON "token_versions" USING btree ("changed_at");--> statement-breakpoint
 CREATE INDEX "tokens_group_id_idx" ON "tokens" USING btree ("group_id");--> statement-breakpoint

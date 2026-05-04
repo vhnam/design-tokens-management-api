@@ -18,7 +18,7 @@ const HIERARCHY_LOCK_KIND = {
 export type TokenHierarchyLockKind = keyof typeof HIERARCHY_LOCK_KIND;
 
 /**
- * Creates file → set → group for a reserved workspace hierarchy in one transaction.
+ * Creates file → set → group for a reserved organization hierarchy in one transaction.
  * Uses `pg_advisory_xact_lock` so concurrent first-time bootstraps are serialized; re-checks
  * existence under the lock so duplicate hierarchies are not created.
  */
@@ -26,7 +26,7 @@ export async function ensureTokenHierarchyBootstrap(
   db: Database,
   params: {
     ownerId: string;
-    workspaceId: string;
+    organizationId: string;
     fileName: string;
     groupName: string;
     level: TokenLevel;
@@ -37,7 +37,7 @@ export async function ensureTokenHierarchyBootstrap(
 
   await db.transaction(async (tx) => {
     await tx.execute(
-      sql`SELECT pg_advisory_xact_lock(hashtext(${params.workspaceId}::text), ${kind}::integer)`,
+      sql`SELECT pg_advisory_xact_lock(hashtext(${params.organizationId}::text), ${kind}::integer)`,
     );
 
     const [existing] = await tx
@@ -47,7 +47,7 @@ export async function ensureTokenHierarchyBootstrap(
       .innerJoin(tokenFiles, eq(tokenSets.fileId, tokenFiles.id))
       .where(
         and(
-          eq(tokenFiles.workspaceId, params.workspaceId),
+          eq(tokenFiles.organizationId, params.organizationId),
           eq(tokenFiles.name, params.fileName),
           eq(tokenSets.name, DEFAULT_TOKEN_SET_NAME),
           eq(tokenGroups.name, params.groupName),
@@ -69,7 +69,7 @@ export async function ensureTokenHierarchyBootstrap(
       name: params.fileName,
       description: null,
       ownerId: params.ownerId,
-      workspaceId: params.workspaceId,
+      organizationId: params.organizationId,
     });
 
     await tx.insert(tokenSets).values({

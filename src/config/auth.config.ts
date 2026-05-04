@@ -1,5 +1,6 @@
 import type { BetterAuthOptions } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { organization } from 'better-auth/plugins/organization';
 
 import { db } from '../config/db.config';
 import { env } from '../config/env.config';
@@ -31,4 +32,5 @@ export const authConfig: BetterAuthOptions = {
   emailVerification: {
     sendOnSignUp: true,
   },
+  plugins: [organization()],
 };

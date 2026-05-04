@@ -6,7 +6,7 @@ export interface PrimitiveTokenDto {
   type: TokenType;
   rawValue: string;
   description?: string | null;
-  workspaceId: string;
+  organizationId: string;
 }
 
 export interface CreatePrimitiveTokenDto {

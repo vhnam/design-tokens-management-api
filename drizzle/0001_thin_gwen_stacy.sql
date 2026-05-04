@@ -1,2 +1,0 @@
-CREATE UNIQUE INDEX "token_files_workspace_id_name_uidx" ON "token_files" USING btree ("workspace_id","name");--> statement-breakpoint
-CREATE UNIQUE INDEX "token_sets_file_id_name_uidx" ON "token_sets" USING btree ("file_id","name");

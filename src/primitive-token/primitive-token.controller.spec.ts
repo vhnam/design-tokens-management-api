@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 
-import { WorkspaceService } from '../workspace/workspace.service';
+import { DATABASE } from '../database/database.constants';
+import { TokenType } from '../enums/token.enum';
 
 import { PrimitiveTokenController } from './primitive-token.controller';
 import { PrimitiveTokenService } from './primitive-token.service';
@@ -45,9 +46,15 @@ describe('PrimitiveTokenController', () => {
           useValue: primitiveTokenService,
         },
         {
-          provide: WorkspaceService,
+          provide: DATABASE,
           useValue: {
-            findDefaultWorkspaceId: jest.fn().mockResolvedValue(null),
+            select: jest.fn(() => ({
+              from: jest.fn(() => ({
+                where: jest.fn(() => ({
+                  limit: jest.fn().mockResolvedValue([{ id: 'membership-1' }]),
+                })),
+              })),
+            })),
           },
         },
       ],
@@ -66,28 +73,30 @@ describe('PrimitiveTokenController', () => {
       name: 'Primary 500',
       type: 'color',
       description: null,
-      workspaceId: 'cb1d0ab4-2f8c-4ace-a3e7-cf7f2deec8df',
+      organizationId: 'cb1d0ab4-2f8c-4ace-a3e7-cf7f2deec8df',
     });
 
     const result = await controller.create(
       'cb1d0ab4-2f8c-4ace-a3e7-cf7f2deec8df',
       {
         name: 'Primary 500',
-        type: 'color',
+        type: TokenType.Color,
+        rawValue: '#fff',
       },
     );
 
     expect(primitiveTokenService.create).toHaveBeenCalledWith({
       name: 'Primary 500',
       type: 'color',
-      workspaceId: 'cb1d0ab4-2f8c-4ace-a3e7-cf7f2deec8df',
+      rawValue: '#fff',
+      organizationId: 'cb1d0ab4-2f8c-4ace-a3e7-cf7f2deec8df',
     });
     expect(result).toEqual({
       id: 'cb1d0ab4-2f8c-4ace-a3e7-cf7f2deec8df',
       name: 'Primary 500',
       type: 'color',
       description: null,
-      workspaceId: 'cb1d0ab4-2f8c-4ace-a3e7-cf7f2deec8df',
+      organizationId: 'cb1d0ab4-2f8c-4ace-a3e7-cf7f2deec8df',
     });
   });
 

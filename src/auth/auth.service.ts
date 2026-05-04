@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { betterAuth } from 'better-auth';
+import { organization } from 'better-auth/plugins/organization';
 
 import { authConfig } from '../config/auth.config';
 import { env } from '../config/env.config';
@@ -47,6 +48,25 @@ export class AuthService {
           });
         },
       },
+      plugins: [
+        organization({
+          allowUserToCreateOrganization: (user) => user.emailVerified === true,
+          organizationLimit: 10,
+          membershipLimit: 100,
+          disableOrganizationDeletion: true,
+          invitationExpiresIn: 60 * 60 * 24 * 7,
+          invitationLimit: 50,
+          sendInvitationEmail: async (data) => {
+            const invitationId = encodeURIComponent(data.invitation.id);
+            await this.emailService.sendEmail({
+              from: env.RESEND_FROM_EMAIL,
+              to: data.email,
+              subject: `Join ${data.organization.name}`,
+              text: `${data.inviter.user.name} invited you to join ${data.organization.name}. Accept invitation: ${frontendOrigin}/auth/accept-invitation?id=${invitationId}`,
+            });
+          },
+        }),
+      ],
     });
   }
 }

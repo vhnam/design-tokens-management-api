@@ -8,20 +8,20 @@ import {
 } from '@nestjs/common';
 import { and, eq } from 'drizzle-orm';
 
+import {
+  DEFAULT_TOKEN_SET_NAME,
+  ensureTokenHierarchyBootstrap,
+} from '../common/bootstrap/token-hierarchy.bootstrap';
 import type { Database } from '../config/db.config';
 import { DATABASE } from '../database/database.constants';
 import { TokenLevel, TokenType } from '../enums/token.enum';
+import { organizations } from '../schema/auth.schema';
 import {
   tokenFiles,
   tokenGroups,
   tokenSets,
   tokens,
 } from '../schema/tokens.schema';
-import { workspaces } from '../schema/workspaces.schema';
-import {
-  DEFAULT_TOKEN_SET_NAME,
-  ensureTokenHierarchyBootstrap,
-} from '../common/bootstrap/token-hierarchy.bootstrap';
 
 import type {
   CreatePrimitiveTokenDto,
@@ -33,7 +33,7 @@ const PRIMITIVE_FILE_NAME = '__primitive_tokens__';
 const PRIMITIVE_GROUP_NAME = '__primitive_group__';
 
 type CreatePrimitiveTokenInput = CreatePrimitiveTokenDto & {
-  workspaceId: string;
+  organizationId: string;
 };
 
 @Injectable()
@@ -58,25 +58,25 @@ export class PrimitiveTokenService {
     const description = this.normalizeOptionalField(
       createPrimitiveTokenDto.description,
     );
-    const workspaceId = this.normalizeRequiredField(
-      createPrimitiveTokenDto.workspaceId,
-      'Primitive token workspace is required',
+    const organizationId = this.normalizeRequiredField(
+      createPrimitiveTokenDto.organizationId,
+      'Primitive token organization is required',
     );
 
-    const { ownerId } = await this.ensureWorkspace(workspaceId);
+    const { ownerId } = await this.ensureOrganization(organizationId);
 
-    let groupId = await this.resolvePrimitiveGroupId(workspaceId);
+    let groupId = await this.resolvePrimitiveGroupId(organizationId);
 
     if (!groupId) {
       await ensureTokenHierarchyBootstrap(this.db, {
         ownerId,
-        workspaceId,
+        organizationId,
         fileName: PRIMITIVE_FILE_NAME,
         groupName: PRIMITIVE_GROUP_NAME,
         level: TokenLevel.Primitive,
         lockKind: 'primitive',
       });
-      groupId = await this.resolvePrimitiveGroupId(workspaceId);
+      groupId = await this.resolvePrimitiveGroupId(organizationId);
 
       if (!groupId) {
         throw new BadRequestException('Failed to bootstrap primitive tokens');
@@ -103,11 +103,11 @@ export class PrimitiveTokenService {
         description: tokens.description,
       });
 
-    return this.rowToDto(createdRow, workspaceId);
+    return this.rowToDto(createdRow, organizationId);
   }
 
-  async findAll(workspaceId: string): Promise<PrimitiveTokenDto[]> {
-    await this.ensureWorkspace(workspaceId);
+  async findAll(organizationId: string): Promise<PrimitiveTokenDto[]> {
+    await this.ensureOrganization(organizationId);
 
     const rows = await this.db
       .select({
@@ -116,13 +116,13 @@ export class PrimitiveTokenService {
         type: tokens.type,
         rawValue: tokens.rawValue,
         description: tokens.description,
-        workspaceId: tokenFiles.workspaceId,
+        organizationId: tokenFiles.organizationId,
       })
       .from(tokens)
       .innerJoin(tokenGroups, eq(tokens.groupId, tokenGroups.id))
       .innerJoin(tokenSets, eq(tokenGroups.setId, tokenSets.id))
       .innerJoin(tokenFiles, eq(tokenSets.fileId, tokenFiles.id))
-      .where(primitiveHierarchyWhere(workspaceId));
+      .where(primitiveHierarchyWhere(organizationId));
 
     return rows.map((row) =>
       this.rowToDto(
@@ -133,23 +133,26 @@ export class PrimitiveTokenService {
           rawValue: row.rawValue,
           description: row.description,
         },
-        row.workspaceId,
+        row.organizationId,
       ),
     );
   }
 
-  async findOne(id: string, workspaceId: string): Promise<PrimitiveTokenDto> {
-    const row = await this.findOwnedTokenRow(id, workspaceId);
+  async findOne(
+    id: string,
+    organizationId: string,
+  ): Promise<PrimitiveTokenDto> {
+    const row = await this.findOwnedTokenRow(id, organizationId);
 
-    return this.rowToDto(row, workspaceId);
+    return this.rowToDto(row, organizationId);
   }
 
   async update(
     id: string,
-    workspaceId: string,
+    organizationId: string,
     updatePrimitiveTokenDto: UpdatePrimitiveTokenDto,
   ): Promise<PrimitiveTokenDto> {
-    await this.ensureExists(id, workspaceId);
+    await this.ensureExists(id, organizationId);
 
     const values: Partial<{
       name: string;
@@ -201,53 +204,56 @@ export class PrimitiveTokenService {
         description: tokens.description,
       });
 
-    return this.rowToDto(updatedRow, workspaceId);
+    return this.rowToDto(updatedRow, organizationId);
   }
 
-  async remove(id: string, workspaceId: string): Promise<{ deleted: true }> {
-    await this.ensureExists(id, workspaceId);
+  async remove(id: string, organizationId: string): Promise<{ deleted: true }> {
+    await this.ensureExists(id, organizationId);
     await this.db.delete(tokens).where(eq(tokens.id, id));
 
     return { deleted: true };
   }
 
-  private async ensureWorkspace(
-    workspaceId: string,
+  private async ensureOrganization(
+    organizationId: string,
   ): Promise<{ ownerId: string }> {
-    const [ws] = await this.db
-      .select({ ownerId: workspaces.ownerId })
-      .from(workspaces)
-      .where(eq(workspaces.id, workspaceId))
+    const [org] = await this.db
+      .select({ ownerId: organizations.createdBy })
+      .from(organizations)
+      .where(eq(organizations.id, organizationId))
       .limit(1);
 
-    if (!ws) {
-      throw new NotFoundException('Workspace not found');
+    if (!org) {
+      throw new NotFoundException('Organization not found');
     }
 
-    return ws;
+    return org;
   }
 
   private async resolvePrimitiveGroupId(
-    workspaceId: string,
+    organizationId: string,
   ): Promise<string | null> {
     const [row] = await this.db
       .select({ groupId: tokenGroups.id })
       .from(tokenGroups)
       .innerJoin(tokenSets, eq(tokenGroups.setId, tokenSets.id))
       .innerJoin(tokenFiles, eq(tokenSets.fileId, tokenFiles.id))
-      .where(primitiveHierarchyWhere(workspaceId))
+      .where(primitiveHierarchyWhere(organizationId))
       .limit(1);
 
     return row?.groupId ?? null;
   }
 
-  private async ensureExists(id: string, workspaceId: string): Promise<void> {
-    await this.findOwnedTokenRow(id, workspaceId);
+  private async ensureExists(
+    id: string,
+    organizationId: string,
+  ): Promise<void> {
+    await this.findOwnedTokenRow(id, organizationId);
   }
 
   private async findOwnedTokenRow(
     id: string,
-    workspaceId: string,
+    organizationId: string,
   ): Promise<{
     id: string;
     name: string;
@@ -255,7 +261,7 @@ export class PrimitiveTokenService {
     rawValue: string | null;
     description: string | null;
   }> {
-    await this.ensureWorkspace(workspaceId);
+    await this.ensureOrganization(organizationId);
 
     const [found] = await this.db
       .select({
@@ -269,7 +275,7 @@ export class PrimitiveTokenService {
       .innerJoin(tokenGroups, eq(tokens.groupId, tokenGroups.id))
       .innerJoin(tokenSets, eq(tokenGroups.setId, tokenSets.id))
       .innerJoin(tokenFiles, eq(tokenSets.fileId, tokenFiles.id))
-      .where(and(eq(tokens.id, id), primitiveHierarchyWhere(workspaceId)));
+      .where(and(eq(tokens.id, id), primitiveHierarchyWhere(organizationId)));
 
     if (!found) {
       throw new NotFoundException('Primitive token not found');
@@ -286,7 +292,7 @@ export class PrimitiveTokenService {
       rawValue: string | null;
       description: string | null;
     },
-    workspaceId: string,
+    organizationId: string,
   ): PrimitiveTokenDto {
     return {
       id: row.id,
@@ -294,7 +300,7 @@ export class PrimitiveTokenService {
       type: row.type ?? TokenType.String,
       rawValue: row.rawValue ?? '',
       description: row.description,
-      workspaceId,
+      organizationId,
     };
   }
 
@@ -327,9 +333,9 @@ export class PrimitiveTokenService {
   }
 }
 
-function primitiveHierarchyWhere(workspaceId: string) {
+function primitiveHierarchyWhere(organizationId: string) {
   return and(
-    eq(tokenFiles.workspaceId, workspaceId),
+    eq(tokenFiles.organizationId, organizationId),
     eq(tokenFiles.name, PRIMITIVE_FILE_NAME),
     eq(tokenSets.name, DEFAULT_TOKEN_SET_NAME),
     eq(tokenGroups.name, PRIMITIVE_GROUP_NAME),

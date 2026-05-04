@@ -26,13 +26,17 @@ type BetterAuthMergedConfig = {
 
 const betterAuthMock = jest.fn((): { instance: string } => ({
   instance: 'auth',
-})) as jest.MockedFunction<
+})) as unknown as jest.MockedFunction<
   (config: BetterAuthMergedConfig) => { instance: string }
 >;
 
 jest.mock('better-auth', () => ({
   betterAuth: (...args: [BetterAuthMergedConfig]): { instance: string } =>
     betterAuthMock(...args),
+}));
+
+jest.mock('better-auth/plugins/organization', () => ({
+  organization: (options: unknown) => options,
 }));
 
 jest.mock('../config/auth.config', () => ({

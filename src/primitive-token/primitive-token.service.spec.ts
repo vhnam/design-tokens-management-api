@@ -11,8 +11,8 @@ describe('PrimitiveTokenService', () => {
       service.create({
         name: '   ',
         type: TokenType.Color,
-        value: '#fff',
-        workspaceId: 'w',
+        rawValue: '#fff',
+        organizationId: 'w',
       }),
     ).rejects.toThrow(
       new BadRequestException('Primitive token name is required'),
@@ -25,8 +25,8 @@ describe('PrimitiveTokenService', () => {
       service.create({
         name: 'x',
         type: TokenType.Color,
-        value: '   ',
-        workspaceId: 'w',
+        rawValue: '   ',
+        organizationId: 'w',
       }),
     ).rejects.toThrow(
       new BadRequestException('Primitive token value is required'),
@@ -39,8 +39,8 @@ describe('PrimitiveTokenService', () => {
       service.create({
         name: 'x',
         type: 'not-a-real-type' as TokenType,
-        value: 'y',
-        workspaceId: 'w',
+        rawValue: 'y',
+        organizationId: 'w',
       }),
     ).rejects.toThrow(
       new BadRequestException('Primitive token type is invalid'),

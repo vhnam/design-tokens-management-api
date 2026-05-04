@@ -7,16 +7,13 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { AuthService } from './auth/auth.service';
-import { ComponentTokenModule } from './component-token/component-token.module';
 import { getDatabaseUrlFromEnv } from './config/db.config';
 import { env } from './config/env.config';
 import { DatabaseModule } from './database/database.module';
 import { EmailModule } from './email/email.module';
 import { PrimitiveTokenModule } from './primitive-token/primitive-token.module';
 import * as schema from './schema';
-import { SemanticTokenModule } from './semantic-token/semantic-token.module';
 import { UserModule } from './user/user.module';
-import { WorkspaceModule } from './workspace/workspace.module';
 
 @Module({
   imports: [
@@ -47,10 +44,7 @@ import { WorkspaceModule } from './workspace/workspace.module';
     AuthModule,
     EmailModule,
     UserModule,
-    WorkspaceModule,
     PrimitiveTokenModule,
-    SemanticTokenModule,
-    ComponentTokenModule,
   ],
   controllers: [AppController],
   providers: [AppService],
