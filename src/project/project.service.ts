@@ -9,6 +9,10 @@ import {
 } from '@nestjs/common';
 import { and, eq, ne, notInArray } from 'drizzle-orm';
 
+import {
+  INTERNAL_TOKEN_FILE_NAMES,
+  isReservedInternalTokenFileName,
+} from '../common/constants/internal-token-files';
 import type { Database } from '../config/db.config';
 import { DATABASE } from '../database/database.constants';
 import { tokenFiles } from '../schema/tokens.schema';
@@ -18,17 +22,6 @@ import type {
   ProjectDto,
   UpdateProjectDto,
 } from './project.dto';
-
-/** Reserved `token_files` rows bootstrapped for token APIs; hidden from projects CRUD. */
-const INTERNAL_TOKEN_FILE_NAMES = [
-  '__primitive_tokens__',
-  '__semantic_tokens__',
-  '__component_tokens__',
-] as const;
-
-function isReservedProjectName(name: string): boolean {
-  return (INTERNAL_TOKEN_FILE_NAMES as readonly string[]).includes(name);
-}
 
 @Injectable()
 export class ProjectService {
@@ -41,7 +34,7 @@ export class ProjectService {
   ): Promise<ProjectDto> {
     const name = this.normalizeRequiredName(createProjectDto.name);
 
-    if (isReservedProjectName(name)) {
+    if (isReservedInternalTokenFileName(name)) {
       throw new BadRequestException('This project name is reserved');
     }
 
@@ -107,7 +100,7 @@ export class ProjectService {
 
     if (updateProjectDto.name !== undefined) {
       const nextName = this.normalizeRequiredName(updateProjectDto.name);
-      if (isReservedProjectName(nextName)) {
+      if (isReservedInternalTokenFileName(nextName)) {
         throw new BadRequestException('This project name is reserved');
       }
       if (nextName !== existing.name) {
@@ -169,7 +162,7 @@ export class ProjectService {
       throw new NotFoundException('Project not found');
     }
 
-    if (isReservedProjectName(found.name)) {
+    if (isReservedInternalTokenFileName(found.name)) {
       throw new NotFoundException('Project not found');
     }
 

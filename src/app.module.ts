@@ -14,6 +14,7 @@ import { EmailModule } from './email/email.module';
 import { PrimitiveTokenModule } from './primitive-token/primitive-token.module';
 import { ProjectModule } from './project/project.module';
 import * as schema from './schema';
+import { TokenSetModule } from './token-set/token-set.module';
 import { UserModule } from './user/user.module';
 
 @Module({
@@ -47,6 +48,7 @@ import { UserModule } from './user/user.module';
     UserModule,
     ProjectModule,
     PrimitiveTokenModule,
+    TokenSetModule,
   ],
   controllers: [AppController],
   providers: [AppService],
